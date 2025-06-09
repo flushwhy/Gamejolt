@@ -1,0 +1,44 @@
+# Ignore binary builds
+Binaries/
+Intermediate/
+Saved/
+
+# Ignore Visual Studio/Xcode project files (if plugin is distributed independently)
+*.VC.db
+*.VC.opendb
+.vscode/
+*.xcodeproj
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata/
+
+# Ignore Mac system files
+.DS_Store
+
+# Ignore temporary files
+*.log
+*.sdf
+*.suo
+*.user
+*.userprefs
+*.tmp
+*.bak
+*.swp
+*.cache
+*.opensdf
+
+# Ignore Unreal generated files
+DerivedDataCache/
+Build/
+.vs/
+
+# Ignore dotnet artifacts
+Engine/Binaries/ThirdParty/DotNet/*/obj/
+Engine/Binaries/ThirdParty/DotNet/*/bin/
+
+# Plugin-specific (Optional if you're distributing as a Git submodule)
+*.uplugin.saved
+*.uplugin.backup
+
+# Optional: Ignore compiled Blueprint cache if not needed
+Script/

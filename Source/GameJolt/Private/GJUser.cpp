@@ -70,8 +70,13 @@ void UGameJoltUserLibrary::AuthUser(const FString& GameID, const FString& Userna
 	Request->ProcessRequest();
 }
 
-void UGameJoltUserLibrary::FetchUser(const FString &gameID, const FString &UserIdentifier, EUserIdtifierType IdentifierType)
+void UGameJoltUserLibrary::FetchUser(const FString &gameID, const FString &UserIdentifier, UObject* WorldContextObject, EUserIdtifierType IdentifierType)
 {
+	if (!WorldContextObject)
+	{
+		UE_LOG(LogTemp, Error, TEXT("WorldContextObject is null"));
+		return;
+	}
 	if (UserIdentifier.IsEmpty())
 	{
 		UE_LOG(LogTemp, Error, TEXT("UserIdentifier is empty"));
@@ -146,14 +151,14 @@ void UGameJoltUserLibrary::FetchUser(const FString &gameID, const FString &UserI
 	Request->ProcessRequest();
  }
 
-bool UGameJoltUserLibrary::isNumbric(const FString& Username)
+bool UGameJoltUserLibrary::IsNumeric(const FString& Username)
 {
-	for (int i = 0; i < Username.Len(); i++)
+	for (TCHAR Char : Username)
 	{
-		if (!FChar::IsDigit(Username[i]))
+		if (!FChar::IsDigit(Char))
 		{
 			return false;
 		}
 	}
-	return true;
+	return !Username.IsEmpty();
 }

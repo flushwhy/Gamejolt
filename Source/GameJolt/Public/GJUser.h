@@ -30,7 +30,7 @@ enum class EUserIdtifierType : uint8
 };
 
 UCLASS()
-class UGameJoltUserLibrary : public UBlueprintFunctionLibrary
+class GAMEJOLT_API UGameJoltUserLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 	
@@ -44,11 +44,13 @@ public:
 	static void AuthUser(const FString& GameID, const FString& Username, const FString& UserToken, UObject* WorldContextObject, FUserDataCallback_BP Callback);
 
 
-	UFUNCTION(BlueprintCallable, Category = "GameJolt")
+	UFUNCTION(BlueprintCallable, Category = "GameJolt|Users", meta = (WorldContext = "WorldContextObject"))
 	static void FetchUser(
 		const FString &gameID,
 		const FString &UserIdentifier,
+		UObject* WorldContextObject,
 		EUserIdtifierType IdentifierType = EUserIdtifierType::Username);
 
-	static bool isNumbric(const FString& Username);
+	UFUNCTION(BlueprintCallable, Category = "GameJolt|Users")
+	static bool IsNumeric(const FString& Username);
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "UGJUserData.h"
 #include "GJUser.generated.h"
 
 
@@ -20,6 +21,14 @@ struct FGJ
 };
 
 
+// This is for FetchUser since it takes ID or Username.
+UENUM(BlueprintType)
+enum class EUserIdtifierType : uint8
+{
+	Username,
+	UserID
+};
+
 UCLASS()
 class UGameJoltUserLibrary : public UBlueprintFunctionLibrary
 {
@@ -27,21 +36,19 @@ class UGameJoltUserLibrary : public UBlueprintFunctionLibrary
 	
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "GameJolt")
-	static void AuthUser(const FString &gameID,const FString &Username, const FString &Token);
+	UGameJoltUserLibrary();
+	~UGameJoltUserLibrary();
+
+	DECLARE_DYNAMIC_DELEGATE_OneParam(FUserDataCallback_BP, UGJUserData*, UserData);
+	UFUNCTION(BlueprintCallable, Category = "GameJolt|Users", meta = (WorldContext = "WorldContextObject"))
+	static void AuthUser(const FString& GameID, const FString& Username, const FString& UserToken, UObject* WorldContextObject, FUserDataCallback_BP Callback);
+
 
 	UFUNCTION(BlueprintCallable, Category = "GameJolt")
-	static void FetchUser(const FString &UserID,const FString &Username,
-		const FString &Token);
+	static void FetchUser(
+		const FString &gameID,
+		const FString &UserIdentifier,
+		EUserIdtifierType IdentifierType = EUserIdtifierType::Username);
 
-private:
-
-	int32 GJUserID;
-	FString GJUserType;
-	FString GJUserAvatar;
-	FString GJUserSignupDate;
-	FString GJUserSignupTimeStamp;
-	FString GJUserLastLoginDate;
-	FString GJUserLastLoginTimeStamp;
-	FString GJUserStatus;
+	static bool isNumbric(const FString& Username);
 };

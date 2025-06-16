@@ -26,6 +26,7 @@ public class GameJolt : ModuleRules
 			new string[]
 			{
 				"Core",
+				"Engine", // UE 5.0 Build error
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/TimerHandle.h"
+#include "TimerManager.h"
 #include "UGameJoltSessionManager.generated.h"
 
 class UGameJoltSubsystem;

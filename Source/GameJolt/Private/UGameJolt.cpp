@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "GameJolt.h"
+#include "UGameJolt.h"
 
 #define LOCTEXT_NAMESPACE "FGameJoltModule"
 

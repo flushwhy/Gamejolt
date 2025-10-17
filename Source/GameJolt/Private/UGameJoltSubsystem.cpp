@@ -18,7 +18,7 @@
 void UGameJoltSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	
+
 	// Load settings from Project Settings
 	const UGameJoltSettings* Settings = GetDefault<UGameJoltSettings>();
 	GameID = Settings->GameID;
@@ -27,18 +27,25 @@ void UGameJoltSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	// Create and initialize managers
 	TrophyManager = NewObject<UGameJoltTrophyManager>(this);
 	TrophyManager->Initialize(this);
-	
+
 	ScoreManager = NewObject<UGameJoltScoreManager>(this);
 	ScoreManager->Initialize(this);
 
-    DataStoreManager = NewObject<UGameJoltDataStoreManager>(this);
-    DataStoreManager->Initialize(this);
+	DataStoreManager = NewObject<UGameJoltDataStoreManager>(this);
+	DataStoreManager->Initialize(this);
 
 	SessionManager = NewObject<UGameJoltSessionManager>(this);
 	SessionManager->Initialize(this);
 
-    UserManager = NewObject<UGameJoltUserManager>(this);
-    UserManager->Initialize(this);
+	UserManager = NewObject<UGameJoltUserManager>(this);
+	UserManager->Initialize(this);
+
+	// Ensure managers are initialized
+	if (!UserManager)
+	{
+		UserManager = NewObject<UGameJoltUserManager>(this);
+		UserManager->Initialize(this);
+	}
 
 	// Add other managers here as you create them
 }
@@ -87,7 +94,7 @@ void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FStr
 			RequestBodyString.Append(FGenericPlatformHttp::UrlEncode(ParamPair.Key) + TEXT("=") + FGenericPlatformHttp::UrlEncode(ParamPair.Value) + TEXT("&"));
 		}
 		RequestBodyString.RemoveFromEnd(TEXT("&"));
-		
+
 		// Create the special signature payload (key1value1key2value2...) as per documentation
 		FString SignaturePayload = TEXT("");
 		for (const auto& ParamPair : AllParams)
@@ -114,7 +121,7 @@ void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FStr
 		ParamString.RemoveFromEnd(TEXT("&"));
 
 		Url = BaseUrl + Endpoint + TEXT("?") + ParamString;
-		
+
 		// Hash the full URL with parameters + Private Key
 		const FString StringToHash = Url + PrivateKey;
 		Signature = FMD5::HashAnsiString(*StringToHash);
@@ -140,7 +147,7 @@ void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FStr
 	{
 		HttpRequest->SetVerb(TEXT("GET"));
 	}
-	
+
 	// 5. Process the Request
 	UE_LOG(LogTemp, Log, TEXT("GameJolt Request URL: %s"), *HttpRequest->GetURL());
 	HttpRequest->ProcessRequest();

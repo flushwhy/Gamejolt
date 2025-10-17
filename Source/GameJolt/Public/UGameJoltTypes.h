@@ -6,9 +6,9 @@
 #include "UGameJoltTypes.generated.h"
 
 /**
- * @brief Represents the difficulty of a Game Jolt Trophy. 
+ * @brief Represents the difficulty of a Game Jolt Trophy.
  */
-UENUM(BlueprintType) // FIX: Added UENUM macro to make it visible to Unreal's systems
+UENUM(BlueprintType)
 enum class EGameJoltTrophyDifficulty : uint8
 {
     Bronze          UMETA(DisplayName = "Bronze"),
@@ -34,7 +34,6 @@ struct FGameJoltTrophy
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
     FString description;
 
-    // FIX: Changed from FString to the enum for better type safety
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
     EGameJoltTrophyDifficulty difficulty;
 
@@ -42,7 +41,7 @@ struct FGameJoltTrophy
     FString image_url;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    FString achieved; // "false" or timestamp
+    FString achieved;
 };
 
 /**
@@ -57,7 +56,7 @@ struct FGameJoltUser
     FString id;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString type; // User, Developer. Mod and so on
+    FString type;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
     FString username;
@@ -78,7 +77,7 @@ struct FGameJoltUser
     int32 last_logged_in_timestamp = 0;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString status; // Active, Banned
+    FString status;
 };
 
 /**
@@ -89,11 +88,9 @@ struct FGameJoltScore
 {
     GENERATED_BODY()
 
-    /** The score string. E.g., "500 Points". */
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
     FString score;
 
-    /** The numerical value of the score used for sorting. */
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
     int32 sort = 0;
 
@@ -104,10 +101,10 @@ struct FGameJoltScore
     FString user_id;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString user; // Username, if the score belongs to a registered user.
+    FString user;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString guest; // Guest name, if the score was submitted by a guest.
+    FString guest;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
     FString stored;
@@ -136,7 +133,6 @@ struct FGameJoltScoreTable
     UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
     bool primary = false;
 };
-
 
 /**
  * @brief Represents a key from the game's data store.

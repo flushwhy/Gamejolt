@@ -7,31 +7,38 @@ public class GameJolt : ModuleRules
 	public GameJolt(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
+
 		PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...
 			}
 			);
-				
-		
+
+
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				// ... add other private include paths required here ...
 			}
 			);
-			
-		
+
+
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"Core",
-				"Engine", // UE 5.0 Build error
-				// ... add other public dependencies that you statically link with here ...
+				"Engine",
+				"CoreUObject",
+				"Slate",
+				"SlateCore",
+				"HTTP",
+				"Json",
+				"JsonUtilities",
+				"DeveloperSettings",
+				"BlueprintGraph" // Added for Blueprint support
 			}
 			);
-			
-		
+
+
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -46,8 +53,8 @@ public class GameJolt : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-		
-		
+
+
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{

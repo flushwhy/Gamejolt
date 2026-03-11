@@ -37,17 +37,12 @@ void UGameJoltSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	SessionManager = NewObject<UGameJoltSessionManager>(this);
 	SessionManager->Initialize(this);
 
-	UserManager = NewObject<UGameJoltUserManager>(this);
-	UserManager->Initialize(this);
-
 	// Ensure managers are initialized
 	if (!UserManager)
 	{
 		UserManager = NewObject<UGameJoltUserManager>(this);
 		UserManager->Initialize(this);
 	}
-
-	// Add other managers here as you create them
 }
 
 void UGameJoltSubsystem::Deinitialize()
@@ -211,4 +206,26 @@ bool UGameJoltSubsystem::IsResponseSuccessful(const FHttpResponsePtr& Response, 
 	}
 
 	return true;
+}
+
+FString UGameJoltSubsystem::GenerateSignature(const FString& FullUrl, const TMap<FString, FString>& PostParams)
+{
+    FString SignatureBase = FullUrl;
+
+    if (PostParams.Num() > 0)
+    {
+        // 1. Sort POST keys alphabetically (Mandatory for GJ v1.2)
+        TArray<FString> Keys;
+        PostParams.GetKeys(Keys);
+        Keys.Sort();
+
+        // 2. Append values in order
+        for (const FString& Key : Keys)
+        {
+            SignatureBase += PostParams[Key];
+        }
+    }
+
+    SignatureBase += PrivateKey;
+    return FMD5::HashAnsiString(*SignatureBase);
 }

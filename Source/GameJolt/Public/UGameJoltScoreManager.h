@@ -70,6 +70,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Scores")
 	void GetScoreRank(FOnGetRankComplete OnComplete, int32 SortValue, int32 TableID = 0);
+	
+	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Scores")
+	void AddScore(FOnDataStoreOpComplete OnComplete, int32 SortValue, FString ScoreText, int32 TableID = 0);
 
 private:
 	/** A weak pointer to the subsystem to avoid circular references and dangling pointers. */

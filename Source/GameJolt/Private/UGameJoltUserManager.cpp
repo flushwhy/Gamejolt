@@ -30,29 +30,28 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 
 			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
-				if (JsonObject.IsValid())
+				if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
 				{
-					// This is where the magic happens! Convert the JSON object directly to our struct.
-					if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
-					{
-						// Success!
-						OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
-						return;
-					}
-					else
-					{
-						ErrorMessage = TEXT("Failed to convert JSON response to User struct.");
-					}
-				}
-				else
-				{
-					ErrorMessage = TEXT("Failed to parse valid JSON from a successful response.");
+					// AUTO-MANAGE: Cache the credentials globally in the subsystem
+					SubsystemPtr->SetActiveUser(Username, UserToken);
+
+					OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
+					return;
 				}
 			}
+			else
+			{
+				ErrorMessage = TEXT("Failed to convert JSON response to User struct.");
+			}
+		}
+	else
+	{
+		ErrorMessage = TEXT("Failed to parse valid JSON from a successful response.");
+	}
+}
 
-			// If we reach here, something failed. ErrorMessage will be set.
-			OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
+// If we reach here, something failed. ErrorMessage will be set.
+OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
 
 		}), false);
 }

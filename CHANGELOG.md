@@ -9,12 +9,32 @@ All notable changes to this project will be documented in this file...
 
 
 ### Changed
- 
-- Changed build settings to be compatible with 5.0 UE.
+-
 
 ### Removed
 
 ### Fixed
+
+## [1.0.2] - TBA
+
+### Added
+
+- Credential Caching: Added `SetActiveUser` and `GetActiveUser` to `UGameJoltSubsystem`. The plugin now "remembers" who is playing.
+
+- Auth State Tracking: Added `IsUserAuthenticated()` to allow Blueprints to easily check login status before attempting API calls.
+
+### Changed
+
+- Streamlined Logic: Reworked `AddScore` to automatically pull credentials from the Subsystem.
+
+- Internal Plumbing: Updated `UGameJoltUserManager` to automatically update the global cache upon a successful login, removing the need for the user to manually save the Token.
+
+- BP Node Efficiency: Reduced pin count on core nodes. (As noted, this begins the path toward a ~60% reduction in Blueprint "spaghetti").
+
+### Fixed
+
+- Signature Generation (MD5): Updated `GenerateSignature` to support GameJolt API v1.2, specifically handling alphabetical key sorting for POST requests and correct URL concatenation for GET requests.
+
 
 ## [1.0.1] - 2025-06-16
 

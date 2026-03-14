@@ -39,6 +39,30 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
 	TObjectPtr<UGameJoltSessionManager> SessionManager;
 
+
+	/**
+	 * Sets the active user for API requests. This should be called after a successful login.
+	 */
+
+	UFUNCTION(BlueprintCallable, Category = "Game Jolt")
+	void SetActiveUser(const FString& InUsername, const FString& InUserToken)
+	{
+		CurrentUsername = InUsername;
+		CurrentUserToken = InUserToken;
+		bIsUserAuthenticated = !InUsername.IsEmpty() && !InUserToken.IsEmpty();
+	}
+
+	void GetActiveUser(FString& OutUsername, FString& OutUserToken) const
+	{
+		OutUsername = CurrentUsername;
+		OutUserToken = CurrentUserToken;
+	}
+
+	bool IsUserAuthenticated() const
+	{
+		return bIsUserAuthenticated;
+	}
+
 	/**
 	 * Makes an API request to the Game Jolt server.
 	 */
@@ -65,6 +89,11 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Subsystem")
 	UGameJoltSessionManager* GetSessionManager() const { return SessionManager; }
+
+	protected:
+		FString CurrentUsername;
+		FString CurrentUserToken;
+		bool bIsUserAuthenticated = false;
 
 private:
 	FString GameID;

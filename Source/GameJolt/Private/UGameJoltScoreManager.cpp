@@ -137,3 +137,32 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 			OnComplete.ExecuteIfBound(bool(Rank), bSuccess);
 		}), false);
 }
+
+void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 SortValue, FString ScoreText, int32 TableID)
+{
+	FString User, Token;
+	SubsystemPtr->GetActiveUser(User, Token);
+
+	if (User.IsEmpty())
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("Error: No user authenticated. Call Login first."));
+		return;
+	}
+
+	TMap<FString, FString> Params;
+	Params.Add(TEXT("username"), User);
+	Params.Add(TEXT("user_token"), Token);
+
+	Params.Add(TEXT("score"), ScoreText);
+	Params.Add(TEXT("sort"), FString::FromInt(SortValue));
+	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
+
+	// The 'true' at the end specifies this is a POST request
+	SubsystemPtr->MakeApiRequest(TEXT("/scores/add"), Params, FHttpRequestCompleteDelegate::CreateLambda(
+		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		{
+			FString ErrorMessage;
+			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
+		}), true);
+}

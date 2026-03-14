@@ -2,19 +2,6 @@
 
 All notable changes to this project will be documented in this file...
 
-## [Next Release]
-
-### Added
-- 
-
-
-### Changed
--
-
-### Removed
-
-### Fixed
-
 ## [1.0.2] - TBA
 
 ### Added

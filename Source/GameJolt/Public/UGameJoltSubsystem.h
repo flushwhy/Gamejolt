@@ -39,11 +39,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
 	TObjectPtr<UGameJoltSessionManager> SessionManager;
 
-
 	/**
-	 * Sets the active user for API requests. This should be called after a successful login.
+	 * Sets the active user for API requests. Called automatically after a successful AuthenticateUser.
 	 */
-
 	UFUNCTION(BlueprintCallable, Category = "Game Jolt")
 	void SetActiveUser(const FString& InUsername, const FString& InUserToken)
 	{
@@ -64,40 +62,40 @@ public:
 	}
 
 	/**
-	 * Makes an API request to the Game Jolt server.
+	 * Makes a GET request to the Game Jolt API.
+	 * All Game Jolt API v1.2 requests are GET — the bIsPostRequest parameter has been removed.
 	 */
-	void MakeApiRequest(const FString& Endpoint, const TMap<FString, FString>& Parameters, const FHttpRequestCompleteDelegate& OnComplete, bool bIsPostRequest);
+	void MakeApiRequest(const FString& Endpoint, const TMap<FString, FString>& Parameters, const FHttpRequestCompleteDelegate& OnComplete);
 
 	/**
-	 * Parses the JSON response from the Game Jolt API.
+	 * Parses the JSON response from the Game Jolt API and returns the inner "response" object.
+	 * Returns nullptr if the request failed or the API returned success:false.
 	 */
 	TSharedPtr<FJsonObject> ParseResponse(const FHttpResponsePtr& Response) const;
 
 	/**
-	 * Checks if the HTTP response was successful.
+	 * Checks if the HTTP response was successful and the API returned success:true.
+	 * Populates OutErrorMessage on failure.
 	 */
 	bool IsResponseSuccessful(const FHttpResponsePtr& Response, bool bWasSuccessful, FString& OutErrorMessage) const;
 
-	/**
-	 * Gets the User Manager.
-	 */
+	/** Gets the User Manager. */
 	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Subsystem")
 	UGameJoltUserManager* GetUserManager() const { return UserManager; }
 
-	/**
-	 * Gets the Session Manager.
-	 */
+	/** Gets the Session Manager. */
 	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Subsystem")
 	UGameJoltSessionManager* GetSessionManager() const { return SessionManager; }
 
-	protected:
-		FString CurrentUsername;
-		FString CurrentUserToken;
-		bool bIsUserAuthenticated = false;
+protected:
+	FString CurrentUsername;
+	FString CurrentUserToken;
+	bool bIsUserAuthenticated = false;
 
 private:
 	FString GameID;
 	FString PrivateKey;
 
-	FString GenerateSignature(const FString& Url);
+	/** Generates an MD5 signature per the Game Jolt API spec: MD5(FullUrl + PrivateKey). */
+	FString GenerateSignature(const FString& FullUrl) const;
 };

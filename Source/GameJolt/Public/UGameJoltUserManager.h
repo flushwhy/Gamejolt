@@ -7,10 +7,19 @@
 
 class UGameJoltSubsystem;
 
-/**
- * Delegate for user authentication completion.
- * @param bSuccess - Whether the authentication was successful.
- * @param User - The authenticated user data.
- * @param ErrorMessage - Error message if authentication failed.
- */
-DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnAuthUserComplete, bool, bSuccess, const FGameJoltUser&, User, const FString&, Error
+// FOnAuthUserComplete is declared in UGameJoltTypes.h - do NOT redeclare it here.
+
+UCLASS(BlueprintType)
+class GAMEJOLT_API UGameJoltUserManager : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	void Initialize(UGameJoltSubsystem* InSubsystem);
+
+	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Users")
+	void AuthenticateUser(FOnAuthUserComplete OnComplete, const FString& Username, const FString& UserToken);
+
+private:
+	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
+};

@@ -21,37 +21,31 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 	Params.Add(TEXT("username"), Username);
 	Params.Add(TEXT("user_token"), UserToken);
 
-	// This is a GET request, so the last parameter is 'false'.
 	SubsystemPtr->MakeApiRequest(TEXT("/users/auth"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Username, UserToken, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
 			FGameJoltUser AuthenticatedUser;
 			FString ErrorMessage;
 
 			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
+				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				if (JsonObject.IsValid())
 				{
-					// AUTO-MANAGE: Cache the credentials globally in the subsystem
-					SubsystemPtr->SetActiveUser(Username, UserToken);
-
-					OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
-					return;
+					if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
+					{
+						SubsystemPtr->SetActiveUser(Username, UserToken);
+						OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
+						return;
+					}
+					ErrorMessage = TEXT("Failed to convert JSON response to User struct.");
+				}
+				else
+				{
+					ErrorMessage = TEXT("Failed to parse valid JSON from a successful response.");
 				}
 			}
-			else
-			{
-				ErrorMessage = TEXT("Failed to convert JSON response to User struct.");
-			}
-		}
-	else
-	{
-		ErrorMessage = TEXT("Failed to parse valid JSON from a successful response.");
-	}
-}
 
-// If we reach here, something failed. ErrorMessage will be set.
-OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
-
-		}), false);
+			OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
+		}));
 }

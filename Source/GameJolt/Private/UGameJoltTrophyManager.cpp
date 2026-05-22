@@ -1,12 +1,8 @@
 #include "UGameJoltTrophyManager.h"
-
 #include "UGameJoltSubsystem.h"
-#include "UGameJoltTrophyManager.h"
 #include "Interfaces/IHttpResponse.h"
 #include "JsonObjectConverter.h"
 #include "Interfaces/IHttpRequest.h"
-
-class UGameJoltSubsystem;
 
 void UGameJoltTrophyManager::Initialize(UGameJoltSubsystem* InSubsystem)
 {
@@ -21,10 +17,20 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
         return;
     }
 
+    FString User, Token;
+    SubsystemPtr->GetActiveUser(User, Token);
+
+    if (User.IsEmpty())
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("No authenticated user. Call AuthenticateUser first."));
+        return;
+    }
+
     TMap<FString, FString> Params;
+    Params.Add(TEXT("username"), User);
+    Params.Add(TEXT("user_token"), Token);
     Params.Add(TEXT("achieved"), bAchieved ? TEXT("true") : TEXT("false"));
 
-    // Call MakeApiRequest, ensuring the 'false' for a GET request is present
     SubsystemPtr->MakeApiRequest(TEXT("/trophies"), Params, FHttpRequestCompleteDelegate::CreateLambda(
         [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
@@ -33,26 +39,18 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
 
             if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                // FIX: Added a space between 'const' and 'TSharedPtr'
                 const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
-
                 if (JsonObject.IsValid())
                 {
-                    // FIX: Added a space between 'const' and 'TArray'
                     const TArray<TSharedPtr<FJsonValue>>* TrophiesJsonArray;
-
                     if (JsonObject->TryGetArrayField(TEXT("trophies"), TrophiesJsonArray))
                     {
                         if (FJsonObjectConverter::JsonArrayToUStruct(*TrophiesJsonArray, &FetchedTrophies, 0, 0))
                         {
-                            // Success! Everything worked.
                             OnComplete.ExecuteIfBound(true, FetchedTrophies, TEXT(""));
-                            return; // Exit the lambda early on success
+                            return;
                         }
-                        else
-                        {
-                            ErrorMessage = TEXT("Failed to convert JSON to trophies struct.");
-                        }
+                        ErrorMessage = TEXT("Failed to convert JSON to trophies struct.");
                     }
                     else
                     {
@@ -64,9 +62,7 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
                     ErrorMessage = TEXT("Failed to parse valid JSON from a successful response.");
                 }
             }
-			
-            // If we reach here, it means something failed. The ErrorMessage will be set.
+
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
-			
-        }), false);
+        }));
 }

@@ -1,96 +1,133 @@
 # GameJolt Plugin for Unreal Engine
 
-This plugin simplifies the process of integrating Game Jolt features into your Unreal Engine projects, with support for both C++ and Blueprints.
+This plugin simplifies integrating Game Jolt features into your Unreal Engine projects, with full support for both C++ and Blueprints.
 
 ---
 
 ## Features
 
-- **User Authentication**: Securely log in players with their Game Jolt credentials.
-- **Session Management**: Open, ping, and close game sessions to track when users are playing.
-- **Trophies**: Fetch trophy information and award trophies to players.
-- **Scores**: Submit scores to leaderboards and fetch high scores.
-- **Cloud Data Storage**: Save and load game data to the cloud, either globally or per-user.
-- **Server Time**: Fetch the official server time.
-- **Friends List**: Get a list of a user's friends.
+- **User Authentication** — Securely log in players with their Game Jolt credentials.
+- **Session Management** — Open, ping, and close game sessions to track when users are playing.
+- **Trophies** — Fetch trophy information for the logged-in user.
+- **Scores** — Submit scores to leaderboards and fetch high scores, including guest scores.
+- **Cloud Data Storage** — Save and load game data to the cloud, either globally or per-user.
 
 ---
 
 ## Installation
 
-1. Go to the Releases page of this repository.
-2. Download the latest `.zip` file.
-3. Find your Unreal Engine project's root directory.
-4. Create a folder named `Plugins` if it doesn't already exist.
-5. Extract the `GameJolt` folder from the downloaded `.zip` file into your `Plugins` folder. The final path should look like `MyProject/Plugins/GameJolt/`.
-6. Right-click on your `.uproject` file and select **"Generate Visual Studio project files"**.
-7. Open your project. Unreal Engine should prompt you that a new plugin has been found and ask to build it. Click **"Yes"**.
+1. Go to the **Releases** page of this repository and download the latest `.zip` file.
+2. Find your Unreal Engine project's root directory.
+3. Create a folder named `Plugins` if it doesn't already exist.
+4. Extract the `GameJolt` folder from the `.zip` into your `Plugins` folder. The final path should look like `MyProject/Plugins/GameJolt/`.
+5. Right-click your `.uproject` file and select **"Generate Visual Studio project files"**.
+6. Open your project. Unreal Engine will prompt you to build the new plugin — click **"Yes"**.
 
 ---
 
 ## Setup
 
-Before you can use the API, you must provide your game's credentials:
+Before using the API, provide your game's credentials:
 
-1. Open your Unreal Engine project.
-2. Navigate to **Edit -> Project Settings**.
-3. In the left-hand panel, scroll down to the **Plugins** section and click on **Game Jolt API**.
-4. Enter your **Game ID** and **Private Key**. You can find these on your game's dashboard on the Game Jolt website under **Game API -> API Settings**.
+1. Open your project and navigate to **Edit → Project Settings**.
+2. In the left panel, scroll to the **Plugins** section and click **Game Jolt API**.
+3. Enter your **Game ID** and **Private Key**, found on your Game Jolt game dashboard under **Game API → API Settings**.
 
 ---
 
 ## Usage
 
-### Blueprint Example: User Authentication
+### Blueprint
 
-1. **Get the Subsystem and Manager**:
-   - Drag off the **GameInstance** node and call `Get GameJoltSubsystem`.
-   - From the `GameJoltSubsystem`, call `GetUserManager`.
+All API functions are available as single Blueprint nodes under the **Game Jolt** category. No subsystem or manager references are needed.
 
-2. **Call the Function and Bind the Event**:
-   - Drag off the `UserManager` node and call `AuthenticateUser`.
-   - Provide the `Username` and `UserToken` inputs.
-   - Bind a custom event to the `OnComplete` delegate.
+**Typical flow:**
 
-3. **Handle the Result**:
-   - In the custom event, check the `bSuccess` output.
-   - If `bSuccess` is `true`, use the `User` output to display the authenticated user's details (e.g., username).
-   - If `bSuccess` is `false`, display the `ErrorMessage`.
+```
+Event BeginPlay
+  → GJ Login (Username, Token)
+      → On Complete (bSuccess = true)
+          → GJ Open Session
+```
+
+Then anywhere in any Blueprint:
+
+| Node | Description |
+|---|---|
+| `GJ Login` | Authenticate a player. Must be called first. |
+| `GJ Open Session` | Open a session and start auto-pinging. |
+| `GJ Close Session` | Close the session on exit. |
+| `GJ Fetch Trophies` | Get trophies for the logged-in user. |
+| `GJ Submit Score` | Submit a score for the logged-in user. |
+| `GJ Submit Guest Score` | Submit a score for a guest player. |
+| `GJ Fetch Scores` | Fetch scores from a leaderboard table. |
+| `GJ Get Score Rank` | Get the rank of a score value. |
+| `GJ Set User Data` | Save a string to the user's cloud data store. |
+| `GJ Get User Data` | Load a string from the user's cloud data store. |
+| `GJ Set Global Data` | Save a string to the global (game-wide) data store. |
+| `GJ Get Global Data` | Load a string from the global data store. |
+
+All nodes fire a delegate on completion with a `bSuccess` bool and an `ErrorMessage` string on failure.
 
 ---
 
-### C++ Example: User Authentication
+### C++
 
-The C++ workflow is similar to the Blueprint workflow. Here's an example:
-```c
-#include "GameJoltSubsystem.h"
-#include "UGameJoltUserManager.h"
+**Authentication:**
+
+```cpp
+#include "UGameJoltBlueprintLibrary.h"
 
 void AMyPlayerController::AuthenticatePlayer(const FString& Username, const FString& UserToken)
 {
-// Get the subsystem from the Game Instance
-UGameInstance* GameInstance = GetGameInstance();
-if (!GameInstance) return;
-
-    UGameJoltSubsystem* GameJoltSubsystem = GameInstance->GetSubsystem<UGameJoltSubsystem>();
-    if (!GameJoltSubsystem || !GameJoltSubsystem->UserManager) return;
-
-    // Create the delegate and bind a Lambda function to it
-    FOnAuthUserComplete OnCompleteDelegate;
-    OnCompleteDelegate.BindLambda([](bool bSuccess, const FGameJoltUser& User, const FString& ErrorMessage)
+    FOnAuthUserComplete OnComplete;
+    OnComplete.BindLambda([](bool bSuccess, const FGameJoltUser& User, const FString& ErrorMessage)
     {
         if (bSuccess)
         {
-            UE_LOG(LogTemp, Log, TEXT("Successfully authenticated user: %s"), *User.username);
-            // Now you can open a session, fetch trophies, etc.
+            UE_LOG(LogTemp, Log, TEXT("Authenticated: %s"), *User.username);
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("Game Jolt authentication failed: %s"), *ErrorMessage);
+            UE_LOG(LogTemp, Error, TEXT("Auth failed: %s"), *ErrorMessage);
         }
     });
 
-    // Call the API function
-    GameJoltSubsystem->UserManager->AuthenticateUser(OnCompleteDelegate, Username, UserToken);
-} 
+    UGameJoltBlueprintLibrary::Login(this, Username, UserToken, OnComplete);
+}
 ```
+
+**Submitting a score:**
+
+```cpp
+FOnDataStoreOpComplete OnComplete;
+OnComplete.BindLambda([](bool bSuccess, const FString& ErrorMessage)
+{
+    if (!bSuccess)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Score submit failed: %s"), *ErrorMessage);
+    }
+});
+
+UGameJoltBlueprintLibrary::SubmitScore(this, TEXT("5000 Points"), 5000, 0, OnComplete);
+```
+
+**Saving user data:**
+
+```cpp
+FOnDataStoreOpComplete OnComplete;
+OnComplete.BindLambda([](bool bSuccess, const FString& ErrorMessage){});
+
+UGameJoltBlueprintLibrary::SetUserData(this, TEXT("high_score"), TEXT("5000"), OnComplete);
+```
+
+> All C++ functions require a valid `WorldContextObject` as the first argument. Passing `this` from any `AActor` or `UUserWidget` subclass works.
+
+---
+
+## Notes
+
+- `GJ Login` / `UGameJoltBlueprintLibrary::Login` must be called before any user-specific API calls (sessions, trophies, user data store).
+- Sessions are automatically pinged every 30 seconds after `GJ Open Session`. Game Jolt closes sessions not pinged within 120 seconds.
+- Guest scores do not require a logged-in user.
+- Global data store operations do not require a logged-in user.

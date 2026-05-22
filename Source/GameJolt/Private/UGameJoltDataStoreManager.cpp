@@ -26,7 +26,7 @@ void UGameJoltDataStoreManager::SetData(FOnDataStoreOpComplete OnComplete, const
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
-        }), true);
+        }));
 }
 
 void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, const FString& Key)
@@ -55,7 +55,7 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
                 ErrorMessage = TEXT("Failed to extract data from response.");
             }
             OnComplete.ExecuteIfBound(false, TEXT(""), ErrorMessage);
-        }), false);
+        }));
 }
 
 void UGameJoltDataStoreManager::RemoveData(FOnDataStoreOpComplete OnComplete, const FString& Key)
@@ -75,7 +75,7 @@ void UGameJoltDataStoreManager::RemoveData(FOnDataStoreOpComplete OnComplete, co
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
-        }), true);
+        }));
 }
 
 void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
@@ -99,7 +99,7 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
                     const TArray<TSharedPtr<FJsonValue>>* KeysJsonArray;
                     if (JsonObject->TryGetArrayField(TEXT("keys"), KeysJsonArray))
                     {
-                        if(FJsonObjectConverter::JsonArrayToUStruct(*KeysJsonArray, &FetchedKeys, 0, 0))
+                        if (FJsonObjectConverter::JsonArrayToUStruct(*KeysJsonArray, &FetchedKeys, 0, 0))
                         {
                             OnComplete.ExecuteIfBound(true, FetchedKeys, TEXT(""));
                             return;
@@ -113,7 +113,7 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
                 }
             }
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
-        }), false);
+        }));
 }
 
 void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, const FString& Username, const FString& UserToken, const FString& Key, const FString& Data)
@@ -129,14 +129,14 @@ void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, c
     Params.Add(TEXT("user_token"), UserToken);
     Params.Add(TEXT("key"), Key);
     Params.Add(TEXT("data"), Data);
-    
+
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/set"), Params, FHttpRequestCompleteDelegate::CreateLambda(
         [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
-        }), true);
+        }));
 }
 
 void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComplete, const FString& Username, const FString& UserToken, const FString& Key)
@@ -167,7 +167,7 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
                 ErrorMessage = TEXT("Failed to extract data from response.");
             }
             OnComplete.ExecuteIfBound(false, TEXT(""), ErrorMessage);
-        }), false);
+        }));
 }
 
 void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete, const FString& Username, const FString& UserToken, const FString& Key)
@@ -177,7 +177,7 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
-    
+
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
     Params.Add(TEXT("user_token"), UserToken);
@@ -189,7 +189,7 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
-        }), true);
+        }));
 }
 
 void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplete, const FString& Username, const FString& UserToken)
@@ -199,7 +199,7 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
-    
+
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
     Params.Add(TEXT("user_token"), UserToken);
@@ -217,7 +217,7 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
                     const TArray<TSharedPtr<FJsonValue>>* KeysJsonArray;
                     if (JsonObject->TryGetArrayField(TEXT("keys"), KeysJsonArray))
                     {
-                        if(FJsonObjectConverter::JsonArrayToUStruct(*KeysJsonArray, &FetchedKeys, 0, 0))
+                        if (FJsonObjectConverter::JsonArrayToUStruct(*KeysJsonArray, &FetchedKeys, 0, 0))
                         {
                             OnComplete.ExecuteIfBound(true, FetchedKeys, TEXT(""));
                             return;
@@ -231,5 +231,5 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
                 }
             }
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
-        }), false);
+        }));
 }

@@ -2,16 +2,15 @@
 #include "UGameJoltSettings.h"
 #include "UGameJoltTrophyManager.h"
 #include "UGameJoltScoreManager.h"
+#include "UGameJoltUserManager.h"
+#include "UGameJoltSessionManager.h"
+#include "UGameJoltDataStoreManager.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "HttpModule.h"
 #include "Misc/SecureHash.h"
 #include "GenericPlatform/GenericPlatformHttp.h"
-
-#include "UGameJoltUserManager.h"
-#include "UGameJoltSessionManager.h"
-#include "UGameJoltDataStoreManager.h"
 
 // --- Subsystem Lifecycle ---
 
@@ -24,7 +23,7 @@ void UGameJoltSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	GameID = Settings->GameID;
 	PrivateKey = Settings->PrivateKey;
 
-	// Create and initialize managers
+	// Create and initialize all managers
 	TrophyManager = NewObject<UGameJoltTrophyManager>(this);
 	TrophyManager->Initialize(this);
 
@@ -37,26 +36,20 @@ void UGameJoltSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	SessionManager = NewObject<UGameJoltSessionManager>(this);
 	SessionManager->Initialize(this);
 
-	// Ensure managers are initialized
-	if (!UserManager)
-	{
-		UserManager = NewObject<UGameJoltUserManager>(this);
-		UserManager->Initialize(this);
-	}
+	UserManager = NewObject<UGameJoltUserManager>(this);
+	UserManager->Initialize(this);
 }
 
 void UGameJoltSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
-
-	// Managers will be garbage collected, no need to manually null them
 }
 
 // --- API Request Logic ---
 
-void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FString, FString>& Parameters, const FHttpRequestCompleteDelegate& OnComplete, bool bIsPostRequest)
+void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FString, FString>& Parameters, const FHttpRequestCompleteDelegate& OnComplete)
 {
-	// 1. Pre-flight Checks
+	// Pre-flight checks
 	if (GameID.IsEmpty() || PrivateKey.IsEmpty())
 	{
 		UE_LOG(LogTemp, Error, TEXT("GameJolt: Game ID or Private Key is not set in Project Settings. Aborting API request."));
@@ -64,91 +57,67 @@ void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FStr
 		return;
 	}
 
-	// 2. Assemble All Parameters
+	// Assemble all parameters, including mandatory game_id and format
 	TMap<FString, FString> AllParams = Parameters;
 	AllParams.Add(TEXT("game_id"), GameID);
 	AllParams.Add(TEXT("format"), TEXT("json"));
-	AllParams.KeySort(TLess<FString>()); // Sort alphabetically for a consistent signature
 
-	FString Signature;
-	FString Url;
-	FString PostBody;
+	// Sort keys alphabetically for a consistent, deterministic URL
+	AllParams.KeySort(TLess<FString>());
 
-	const FString BaseUrl = TEXT("https://gamejolt.com/api/game/v1_2");
+	// Build the query string
+	// NOTE: Per Game Jolt API v1.2 spec, the signature is computed on the *unencoded* URL,
+	// so we build that first, then URL-encode only for the final request.
+	//
+	// Spec: https://gamejolt.com/game-api/doc/construction
+	// Correct base URL host is api.gamejolt.com, not gamejolt.com.
+	const FString BaseUrl = TEXT("https://api.gamejolt.com/api/game/v1_2");
 
-	// 3. Build Request and Signature based on method (GET vs POST)
-	if (bIsPostRequest)
+	// Step 1: Build the raw (unencoded) URL for signing
+	FString RawParamString;
+	for (const auto& ParamPair : AllParams)
 	{
-		// --- POST Request Logic ---
-		Url = BaseUrl + Endpoint;
-
-		// Create the URL-encoded body for the actual request (key1=value1&key2=value2)
-		FString RequestBodyString = TEXT("");
-		for (const auto& ParamPair : AllParams)
-		{
-			RequestBodyString.Append(FGenericPlatformHttp::UrlEncode(ParamPair.Key) + TEXT("=") + FGenericPlatformHttp::UrlEncode(ParamPair.Value) + TEXT("&"));
-		}
-		RequestBodyString.RemoveFromEnd(TEXT("&"));
-
-		// Create the special signature payload (key1value1key2value2...) as per documentation
-		FString SignaturePayload = TEXT("");
-		for (const auto& ParamPair : AllParams)
-		{
-			SignaturePayload.Append(ParamPair.Key + ParamPair.Value);
-		}
-
-		// Hash the URL + Signature Payload + Private Key
-		const FString StringToHash = Url + SignaturePayload + PrivateKey;
-		Signature = FMD5::HashAnsiString(*StringToHash);
-		UE_LOG(LogTemp, Log, TEXT("GameJolt: String to hash: %s"), *StringToHash);
-
-		// The final body includes the encoded params AND the signature
-		PostBody = RequestBodyString + TEXT("&signature=") + Signature;
+		RawParamString.Append(ParamPair.Key + TEXT("=") + ParamPair.Value + TEXT("&"));
 	}
-	else
+	RawParamString.RemoveFromEnd(TEXT("&"));
+
+	const FString RawUrl = BaseUrl + Endpoint + TEXT("?") + RawParamString;
+
+	// Step 2: Generate the signature: MD5(RawUrl + PrivateKey)
+	const FString Signature = GenerateSignature(RawUrl);
+
+	// Step 3: Build the final URL with URL-encoded parameters + signature appended
+	FString EncodedParamString;
+	for (const auto& ParamPair : AllParams)
 	{
-		// --- GET Request Logic ---
-		FString ParamString = TEXT("");
-		for (const auto& ParamPair : AllParams)
-		{
-			ParamString.Append(FGenericPlatformHttp::UrlEncode(ParamPair.Key) + TEXT("=") + FGenericPlatformHttp::UrlEncode(ParamPair.Value) + TEXT("&"));
-		}
-		ParamString.RemoveFromEnd(TEXT("&"));
-
-		Url = BaseUrl + Endpoint + TEXT("?") + ParamString;
-
-		// Hash the full URL with parameters + Private Key
-		const FString StringToHash = Url + PrivateKey;
-		Signature = FMD5::HashAnsiString(*StringToHash);
-		UE_LOG(LogTemp, Log, TEXT("GameJolt ELSE: String to hash: %s"), *StringToHash);
-
-		// The final URL includes the signature
-		Url.Append(TEXT("&signature=") + Signature);
+		EncodedParamString.Append(
+			FGenericPlatformHttp::UrlEncode(ParamPair.Key) + TEXT("=") +
+			FGenericPlatformHttp::UrlEncode(ParamPair.Value) + TEXT("&")
+		);
 	}
-	// 4. Create and Configure the HTTP Request
-	FHttpModule& HttpModule = FHttpModule::Get();
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.CreateRequest();
+	EncodedParamString.RemoveFromEnd(TEXT("&"));
+
+	const FString FinalUrl = BaseUrl + Endpoint + TEXT("?") + EncodedParamString + TEXT("&signature=") + Signature;
+
+	UE_LOG(LogTemp, Log, TEXT("GameJolt Request URL: %s"), *FinalUrl);
+
+	// Create and fire the GET request
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = FHttpModule::Get().CreateRequest();
 	HttpRequest->OnProcessRequestComplete() = OnComplete;
-	HttpRequest->SetURL(Url);
-
-	if (bIsPostRequest)
-	{
-		HttpRequest->SetVerb(TEXT("POST"));
-		HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
-		HttpRequest->SetContentAsString(PostBody);
-		UE_LOG(LogTemp, Log, TEXT("GameJolt POST Body: %s"), *PostBody);
-	}
-	else
-	{
-		HttpRequest->SetVerb(TEXT("GET"));
-	}
-
-	// 5. Process the Request
-	UE_LOG(LogTemp, Log, TEXT("GameJolt Request URL: %s"), *HttpRequest->GetURL());
+	HttpRequest->SetURL(FinalUrl);
+	HttpRequest->SetVerb(TEXT("GET"));
 	HttpRequest->ProcessRequest();
 }
 
 // --- Helper Functions ---
+
+FString UGameJoltSubsystem::GenerateSignature(const FString& FullUrl) const
+{
+	// Game Jolt API v1.2 signature spec:
+	// SIGNATURE = MD5(FullUrl + PrivateKey)
+	const FString StringToHash = FullUrl + PrivateKey;
+	return FMD5::HashAnsiString(*StringToHash);
+}
 
 TSharedPtr<FJsonObject> UGameJoltSubsystem::ParseResponse(const FHttpResponsePtr& Response) const
 {
@@ -162,7 +131,7 @@ TSharedPtr<FJsonObject> UGameJoltSubsystem::ParseResponse(const FHttpResponsePtr
 	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (!FJsonSerializer::Deserialize(Reader, RootObject) || !RootObject.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GameJolt: Failed to deserialize JSON response."));
+		UE_LOG(LogTemp, Warning, TEXT("GameJolt: Failed to deserialize JSON response. Body: %s"), *Response->GetContentAsString());
 		return nullptr;
 	}
 
@@ -194,38 +163,19 @@ bool UGameJoltSubsystem::IsResponseSuccessful(const FHttpResponsePtr& Response, 
 
 	if (!Response.IsValid() || !EHttpResponseCodes::IsOk(Response->GetResponseCode()))
 	{
-		OutErrorMessage = FString::Printf(TEXT("HTTP request failed with code: %d"), Response.IsValid() ? Response->GetResponseCode() : -1);
+		OutErrorMessage = FString::Printf(TEXT("HTTP request failed with code: %d"),
+			Response.IsValid() ? Response->GetResponseCode() : -1);
 		return false;
 	}
 
+	// FIX: Was incorrectly checking Response.IsValid() again here instead of
+	// checking whether ParseResponse succeeded (i.e. API returned success:true).
 	const TSharedPtr<FJsonObject> ResponseObject = ParseResponse(Response);
-	if (!Response.IsValid())
+	if (!ResponseObject.IsValid())
 	{
-		OutErrorMessage = TEXT("Response was not successful or failed to parse.");
+		OutErrorMessage = TEXT("API returned an error or response failed to parse. Check log for details.");
 		return false;
 	}
 
 	return true;
-}
-
-FString UGameJoltSubsystem::GenerateSignature(const FString& FullUrl, const TMap<FString, FString>& PostParams)
-{
-    FString SignatureBase = FullUrl;
-
-    if (PostParams.Num() > 0)
-    {
-        // 1. Sort POST keys alphabetically (Mandatory for GJ v1.2)
-        TArray<FString> Keys;
-        PostParams.GetKeys(Keys);
-        Keys.Sort();
-
-        // 2. Append values in order
-        for (const FString& Key : Keys)
-        {
-            SignatureBase += PostParams[Key];
-        }
-    }
-
-    SignatureBase += PrivateKey;
-    return FMD5::HashAnsiString(*SignatureBase);
 }

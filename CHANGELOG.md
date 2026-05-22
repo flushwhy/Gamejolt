@@ -56,8 +56,7 @@ This is a major release with breaking changes. Blueprint graphs from 1.x will ne
 
 ---
 
-## [1.0.2] - TBA
-
+## [1.0.2] - Moved to V2.0.0(Not released)
 ### Added
 
 - Credential Caching: Added `SetActiveUser` and `GetActiveUser` to `UGameJoltSubsystem`. The plugin now remembers who is playing.

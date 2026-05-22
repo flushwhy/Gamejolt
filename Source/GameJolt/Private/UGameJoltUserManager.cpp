@@ -21,9 +21,8 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 	Params.Add(TEXT("username"), Username);
 	Params.Add(TEXT("user_token"), UserToken);
 
-	// This is a GET request, so the last parameter is 'false'.
 	SubsystemPtr->MakeApiRequest(TEXT("/users/auth"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Username, UserToken, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
 			FGameJoltUser AuthenticatedUser;
 			FString ErrorMessage;
@@ -33,17 +32,13 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
-					// This is where the magic happens! Convert the JSON object directly to our struct.
 					if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
 					{
-						// Success!
+						SubsystemPtr->SetActiveUser(Username, UserToken);
 						OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
 						return;
 					}
-					else
-					{
-						ErrorMessage = TEXT("Failed to convert JSON response to User struct.");
-					}
+					ErrorMessage = TEXT("Failed to convert JSON response to User struct.");
 				}
 				else
 				{
@@ -51,8 +46,6 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 				}
 			}
 
-			// If we reach here, something failed. ErrorMessage will be set.
 			OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
-
-		}), false);
+		}));
 }

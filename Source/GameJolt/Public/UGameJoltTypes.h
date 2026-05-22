@@ -1,196 +1,229 @@
-// GameJoltTypes.h (Corrected and Complete)
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UGameJoltTypes.generated.h"
 
-/**
- * @brief Represents the difficulty of a Game Jolt Trophy. 
- */
-UENUM(BlueprintType) // FIX: Added UENUM macro to make it visible to Unreal's systems
+// -----------------------------------------------------------------------
+//  Enums
+// -----------------------------------------------------------------------
+
+UENUM(BlueprintType)
 enum class EGameJoltTrophyDifficulty : uint8
 {
-    Bronze          UMETA(DisplayName = "Bronze"),
-    Silver          UMETA(DisplayName = "Silver"),
-    Gold            UMETA(DisplayName = "Gold"),
-    Platinum        UMETA(DisplayName = "Platinum"),
+	Bronze   UMETA(DisplayName = "Bronze"),
+	Silver   UMETA(DisplayName = "Silver"),
+	Gold     UMETA(DisplayName = "Gold"),
+	Platinum UMETA(DisplayName = "Platinum"),
 };
 
-/**
- * @brief Represents a Game Jolt Trophy.
- */
+// -----------------------------------------------------------------------
+//  Structs
+// -----------------------------------------------------------------------
+
 USTRUCT(BlueprintType)
 struct FGameJoltTrophy
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    FString id;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
+	FString id;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    FString title;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
+	FString title;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    FString description;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
+	FString description;
 
-    // FIX: Changed from FString to the enum for better type safety
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    EGameJoltTrophyDifficulty difficulty;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
+	EGameJoltTrophyDifficulty difficulty;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    FString image_url;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
+	FString image_url;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
-    FString achieved; // "false" or timestamp
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Trophy")
+	FString achieved;
 };
 
-/**
- * @brief Represents a Game Jolt User.
- */
 USTRUCT(BlueprintType)
 struct FGameJoltUser
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString id;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString id;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString type; // User, Developer. Mod and so on
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString type;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString username;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString username;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString avatar_url;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString avatar_url;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString signed_up;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString signed_up;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    int32 signed_up_timestamp = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	int32 signed_up_timestamp = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString last_logged_in;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString last_logged_in;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    int32 last_logged_in_timestamp = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	int32 last_logged_in_timestamp = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
-    FString status; // Active, Banned
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|User")
+	FString status;
 };
 
-/**
- * @brief Represents a score entry from a score table.
- */
 USTRUCT(BlueprintType)
 struct FGameJoltScore
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    /** The score string. E.g., "500 Points". */
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString score;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	FString score;
 
-    /** The numerical value of the score used for sorting. */
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    int32 sort = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	int32 sort = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString extra_data;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	FString extra_data;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString user_id;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	FString user_id;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString user; // Username, if the score belongs to a registered user.
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	FString user;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString guest; // Guest name, if the score was submitted by a guest.
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	FString guest;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    FString stored;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	FString stored;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
-    int32 stored_timestamp = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score")
+	int32 stored_timestamp = 0;
 };
 
-/**
- * @brief Represents a single score table for the game.
- */
 USTRUCT(BlueprintType)
 struct FGameJoltScoreTable
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
-    FString id;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
+	FString id;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
-    FString name;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
+	FString name;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
-    FString description;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
+	FString description;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
-    bool primary = false;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Score Table")
+	bool primary = false;
 };
 
-
-/**
- * @brief Represents a key from the game's data store.
- */
 USTRUCT(BlueprintType)
 struct FGameJoltDataKey
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Data Store")
-    FString key;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Data Store")
+	FString key;
 };
 
-/**
- * @brief Represents a user's friend relationship.
- */
 USTRUCT(BlueprintType)
 struct FGameJoltFriend
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Friend")
-    FString friend_id;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Friend")
+	FString friend_id;
 };
 
-/**
- * @brief Represents the server time from the Game Jolt API.
- */
 USTRUCT(BlueprintType)
 struct FGameJoltServerTime
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 timestamp = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 timestamp = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    FString timezone;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	FString timezone;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 year = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 year = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 month = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 month = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 day = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 day = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 hour = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 hour = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 minute = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 minute = 0;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
-    int32 second = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Game Jolt|Time")
+	int32 second = 0;
 };
+
+// -----------------------------------------------------------------------
+//  Delegates
+//  Declared here so all managers can include just UGameJoltTypes.h
+//  without needing to cross-include each other's headers.
+// -----------------------------------------------------------------------
+
+// Users
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnAuthUserComplete,
+	bool, bSuccess,
+	const FGameJoltUser&, User,
+	const FString&, ErrorMessage);
+
+// Sessions
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnSessionComplete,
+	bool, bSuccess,
+	const FString&, ErrorMessage);
+
+// Trophies
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnFetchTrophiesComplete,
+	bool, bSuccess,
+	const TArray<FGameJoltTrophy>&, Trophies,
+	const FString&, ErrorMessage);
+
+// Scores
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnFetchScoreTablesComplete,
+	bool, bSuccess,
+	const TArray<FGameJoltScoreTable>&, ScoreTables);
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnFetchScoresComplete,
+	bool, bSuccess,
+	const TArray<FGameJoltScore>&, Scores);
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnAddScoreComplete,
+	bool, bSuccess,
+	const FString&, ErrorMessage);
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnGetRankComplete,
+	bool, bSuccess,
+	int32, Rank);
+
+// Data Store
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnDataStoreOpComplete,
+	bool, bSuccess,
+	const FString&, ErrorMessage);
+
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnDataStoreFetchComplete,
+	bool, bSuccess,
+	const FString&, Data,
+	const FString&, ErrorMessage);
+
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnDataStoreKeysComplete,
+	bool, bSuccess,
+	const TArray<FGameJoltDataKey>&, Keys,
+	const FString&, ErrorMessage);

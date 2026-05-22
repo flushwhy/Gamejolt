@@ -1,58 +1,44 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/TimerHandle.h"
+#include "UObject/NoExportTypes.h"
+#include "UGameJoltTypes.h"
 #include "UGameJoltSessionManager.generated.h"
 
 class UGameJoltSubsystem;
 
-// A generic delegate for session-related API calls.
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnSessionComplete, bool, bSuccess, const FString&, ErrorMessage);
-
-/**
- * Manages opening, pinging, and closing a game session for an authenticated user.
- */
 UCLASS(BlueprintType)
 class GAMEJOLT_API UGameJoltSessionManager : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	/** Links this manager to the main subsystem. */
 	void Initialize(UGameJoltSubsystem* InSubsystem);
 
 	/**
-	 * Opens a new game session for the user. This should be called after a user is successfully authenticated.
-	 * On success, it will automatically start pinging the session every 30 seconds.
-	 * @param OnComplete Delegate to call with the result.
-	 * @param Username The authenticated user's username.
-	 * @param UserToken The authenticated user's token.
+	 * Opens a session for the currently logged-in user and starts automatic 30-second pings.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Session")
-	void OpenSession(FOnSessionComplete OnComplete, const FString& Username, const FString& UserToken);
+	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Sessions")
+	void OpenSession(FOnSessionComplete OnComplete);
 
 	/**
-	 * Pings the current session to keep it active. This is typically called automatically.
-	 * @param bIsActive Pings with an 'active' status. Set to false for 'idle'.
+	 * Closes the active session and stops automatic pings.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Session")
-	void PingSession(bool bIsActive = true);
-
-	/**
-	 * Closes the current game session. This should be called when the player logs out or quits the game.
-	 * This will stop the automatic session pings.
-	 * @param OnComplete Delegate to call with the result.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Session")
+	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Sessions")
 	void CloseSession(FOnSessionComplete OnComplete);
+
+	/**
+	 * Manually pings the session. Not needed if you used OpenSession (auto-ping is handled).
+	 * @param bIsActive  True = player is active; False = player is idle.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Game Jolt|Sessions")
+	void PingSession(bool bIsActive = true);
 
 private:
 	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
 
-	// Timer for automatically pinging the session
-	FTimerHandle PingTimerHandle;
-
-	// Store credentials for automatic pinging
 	FString CurrentUsername;
 	FString CurrentUserToken;
+
+	FTimerHandle PingTimerHandle;
 };

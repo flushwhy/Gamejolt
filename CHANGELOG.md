@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.0] - TBA
+## [2.0.0] - 2026-22-5
 
 This is a major release with breaking changes. Blueprint graphs from 1.x will need to be rebuilt using the new single-node API.
 

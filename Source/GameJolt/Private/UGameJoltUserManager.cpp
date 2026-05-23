@@ -28,14 +28,14 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 			FGameJoltUser AuthenticatedUser;
 			FString ErrorMessage;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
 					{
-						SubsystemPtr->SetActiveUser(Username, UserToken);
+						Weakthis->SubsystemPtr->SetActiveUser(Username, UserToken);
 						OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
 						return;
 					}

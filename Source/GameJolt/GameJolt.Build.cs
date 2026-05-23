@@ -1,65 +1,30 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 using UnrealBuildTool;
+using System.IO; 
 
 public class GameJolt : ModuleRules
 {
-	public GameJolt(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+    public GameJolt(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicIncludePaths.AddRange(
-			new string[] {
-				// ... add public include paths required here ...
-			}
-			);
+        PublicIncludePaths.AddRange(new string[]
+        {
+            Path.Combine(ModuleDirectory, "Public")
+        });
 
+        PrivateIncludePaths.AddRange(new string[]
+        {
+            Path.Combine(ModuleDirectory, "Private")
+        });
 
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				// ... add other private include paths required here ...
-			}
-			);
+        PublicDependencyModuleNames.AddRange(new string[]
+        {
+            "Core", "HTTP", "Json", "JsonUtilities", "UMG"
+        });
 
-
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				"Engine",
-				"CoreUObject",
-				"Slate",
-				"SlateCore",
-				"HTTP",
-				"Json",
-				"JsonUtilities",
-				"DeveloperSettings",
-				"BlueprintGraph" // Added for Blueprint support
-			}
-			);
-
-
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
-				"HTTP",
-				"Json",
-				"JsonUtilities",
-				"DeveloperSettings"
-				// ... add private dependencies that you statically link with here ...	
-			}
-			);
-
-
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
-	}
+        PrivateDependencyModuleNames.AddRange(new string[]
+        {
+            "CoreUObject", "Engine", "Slate", "SlateCore"
+        });
+    }
 }

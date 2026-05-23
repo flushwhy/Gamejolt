@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
   instance. The existing `if (!SubsystemPtr.IsValid())` guard at call-time did not protect 
   against this mid-flight case.
 
+- **Session Ping Failure Handling**: Added a consecutive failure counter to `PingSession`. 
+After 3 failed pings the timer is cleared automatically, preventing infinite
+fire-and-forget 
+requests on a dead network connection.
+
 ---
 
 ## [2.0.0] - 2026-22-5

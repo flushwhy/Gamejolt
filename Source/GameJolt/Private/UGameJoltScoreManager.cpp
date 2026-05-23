@@ -24,9 +24,9 @@ void UGameJoltScoreManager::FetchScoreTables(FOnFetchScoreTablesComplete OnCompl
 			FString ErrorMessage;
 			bool bSuccess = false;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					const TArray<TSharedPtr<FJsonValue>>* TablesJsonArray;
@@ -65,9 +65,9 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 			FString ErrorMessage;
 			bool bSuccess = false;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					const TArray<TSharedPtr<FJsonValue>>* ScoresJsonArray;
@@ -101,7 +101,7 @@ void UGameJoltScoreManager::AddScoreForGuest(FOnAddScoreComplete OnComplete, con
 		{
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }
@@ -126,9 +126,9 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 			bool bSuccess = false;
 			FString ErrorMessage;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					// FIX: delegate params were inverted � bSuccess first, Rank second.
@@ -168,7 +168,7 @@ void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 So
 		{
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }

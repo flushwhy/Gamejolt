@@ -40,18 +40,18 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		{
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 
 			if (bSuccess)
 			{
 				// Start automatic 30-second pings to keep the session alive.
 				// Game Jolt closes sessions not pinged within 120 seconds.
 				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([this]()
+				TimerDelegate.BindLambda([Weakthis]()
 					{
-						PingSession();
+						Weakthis->PingSession();
 					});
-				GetWorld()->GetTimerManager().SetTimer(PingTimerHandle, TimerDelegate, 30.0f, true);
+				Weakthis->GetWorld()->GetTimerManager().SetTimer(Weakthis->PingTimerHandle, TimerDelegate, 30.0f, true);
 			}
 
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
@@ -71,7 +71,25 @@ void UGameJoltSessionManager::PingSession(bool bIsActive)
 	Params.Add(TEXT("status"), bIsActive ? TEXT("active") : TEXT("idle"));
 
 	// Fire-and-forget � no callback needed for pings.
-	SubsystemPtr->MakeApiRequest(TEXT("/sessions/ping"), Params, FHttpRequestCompleteDelegate());
+	SubsystemPtr->MakeApiRequest(TEXT("/sessions/ping"), Params, FHttpRequestCompleteDelegate::CreateLambda(
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		{
+			int PingFailedCount = 0;
+			if (!bWasSuccessful)
+			{
+
+				PingFailedCount++;
+				if (PingFailedCount >= 3)
+				{
+					GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
+					UE_LOG(LogTemp, Warning, TEXT("GameJolt session ping failed 3 times. Stopping further pings."));
+				}
+			}
+			else
+			{
+				PingFailedCount = 0;
+			}
+		}));
 }
 
 void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
@@ -94,7 +112,7 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 		{
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 

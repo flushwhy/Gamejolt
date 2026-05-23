@@ -38,9 +38,9 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
             TArray<FGameJoltTrophy> FetchedTrophies;
             FString ErrorMessage;
 
-            if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+            if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+                const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid())
                 {
                     const TArray<TSharedPtr<FJsonValue>>* TrophiesJsonArray;

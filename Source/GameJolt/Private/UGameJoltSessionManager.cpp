@@ -36,8 +36,9 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 	Params.Add(TEXT("user_token"), Token);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/open"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltSessionManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 
@@ -69,7 +70,7 @@ void UGameJoltSessionManager::PingSession(bool bIsActive)
 	Params.Add(TEXT("user_token"), CurrentUserToken);
 	Params.Add(TEXT("status"), bIsActive ? TEXT("active") : TEXT("idle"));
 
-	// Fire-and-forget — no callback needed for pings.
+	// Fire-and-forget ï¿½ no callback needed for pings.
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/ping"), Params, FHttpRequestCompleteDelegate());
 }
 
@@ -89,8 +90,9 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 	Params.Add(TEXT("user_token"), CurrentUserToken);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/close"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltSessionManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);

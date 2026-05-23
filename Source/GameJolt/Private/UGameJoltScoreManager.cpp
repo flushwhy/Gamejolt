@@ -17,8 +17,9 @@ void UGameJoltScoreManager::FetchScoreTables(FOnFetchScoreTablesComplete OnCompl
 	}
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/tables"), {}, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			TArray<FGameJoltScoreTable> ScoreTables;
 			FString ErrorMessage;
 			bool bSuccess = false;
@@ -57,8 +58,9 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 	}
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			TArray<FGameJoltScore> Scores;
 			FString ErrorMessage;
 			bool bSuccess = false;
@@ -95,8 +97,9 @@ void UGameJoltScoreManager::AddScoreForGuest(FOnAddScoreComplete OnComplete, con
 	if (!ExtraData.IsEmpty()) Params.Add(TEXT("extra_data"), ExtraData);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/add"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
@@ -116,8 +119,9 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/get-rank"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			int32 Rank = -1;
 			bool bSuccess = false;
 			FString ErrorMessage;
@@ -127,7 +131,7 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
-					// FIX: delegate params were inverted — bSuccess first, Rank second.
+					// FIX: delegate params were inverted ï¿½ bSuccess first, Rank second.
 					bSuccess = JsonObject->TryGetNumberField(TEXT("rank"), Rank);
 				}
 			}
@@ -160,8 +164,9 @@ void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 So
 	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/add"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);

@@ -21,8 +21,10 @@ void UGameJoltDataStoreManager::SetData(FOnDataStoreOpComplete OnComplete, const
     Params.Add(TEXT("data"), Data);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/set"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)>](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
+
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
@@ -41,8 +43,9 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage, FetchedData;
             if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
@@ -70,8 +73,9 @@ void UGameJoltDataStoreManager::RemoveData(FOnDataStoreOpComplete OnComplete, co
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/remove"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!weakthis.IsValid()) return;
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
@@ -87,8 +91,9 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
     }
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/get-keys"), {}, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!weakthis.IsValid()) return;
             TArray<FGameJoltDataKey> FetchedKeys;
             FString ErrorMessage;
             if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
@@ -131,8 +136,9 @@ void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, c
     Params.Add(TEXT("data"), Data);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/set"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
@@ -153,8 +159,9 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if(!weakthis.IsValid()) return;
             FString ErrorMessage, FetchedData;
             if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
@@ -184,8 +191,9 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/remove"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
             const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
@@ -205,8 +213,9 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
     Params.Add(TEXT("user_token"), UserToken);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/get-keys"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             TArray<FGameJoltDataKey> FetchedKeys;
             FString ErrorMessage;
             if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))

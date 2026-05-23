@@ -22,8 +22,9 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 	Params.Add(TEXT("user_token"), UserToken);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/users/auth"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, Username, UserToken, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Username, UserToken, Weakthis = TWeakObjectPtr<UGameJoltUserManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FGameJoltUser AuthenticatedUser;
 			FString ErrorMessage;
 

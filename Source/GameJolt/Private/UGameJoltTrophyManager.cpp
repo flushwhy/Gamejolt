@@ -32,8 +32,9 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
     Params.Add(TEXT("achieved"), bAchieved ? TEXT("true") : TEXT("false"));
 
     SubsystemPtr->MakeApiRequest(TEXT("/trophies"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltTrophyManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             TArray<FGameJoltTrophy> FetchedTrophies;
             FString ErrorMessage;
 

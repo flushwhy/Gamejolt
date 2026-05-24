@@ -323,10 +323,6 @@ public:
 
 private:
 
-	/**
-	*  Bool check to prevent multiple simultaneous API calls of the same type,which the Game Jolt API does not allow. This is not strictly necessary but helps catch potential issues in Blueprints (e.g. accidentally calling FetchScores every frame).
-	*/
-	bool bFetchScoresInFlight = false;
 
 	/** Internal helper — retrieves the subsystem from any world context object. Returns nullptr and logs on failure. */
 	static UGameJoltSubsystem* GetSubsystem(const UObject* WorldContextObject);

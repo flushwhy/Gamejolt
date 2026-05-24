@@ -19,7 +19,7 @@ public class GameJolt : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new string[]
         {
-            "Core", "HTTP", "Json", "JsonUtilities", "UMG"
+            "Core", "HTTP", "Json", "JsonUtilities", "UMG", "DeveloperSettings"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]

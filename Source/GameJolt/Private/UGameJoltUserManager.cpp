@@ -16,6 +16,12 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 		OnComplete.ExecuteIfBound(false, FGameJoltUser(), TEXT("Invalid Subsystem."));
 		return;
 	}
+	if (bAuthenticateUserInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, FGameJoltUser(), TEXT("Another authentication request is already in progress."));
+		return;
+	}
+	bAuthenticateUserInFlight = true;
 
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("username"), Username);
@@ -47,6 +53,7 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 				}
 			}
 
+			Weakthis->bAuthenticateUserInFlight = false;
 			OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
 		}));
 }

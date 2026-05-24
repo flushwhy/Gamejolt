@@ -15,6 +15,12 @@ void UGameJoltScoreManager::FetchScoreTables(FOnFetchScoreTablesComplete OnCompl
 		OnComplete.ExecuteIfBound(false, {});
 		return;
 	}
+	if (bFetchingScoresTablesInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, {});
+		return;
+	}
+	bFetchingScoresTablesInFlight = true;
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/tables"), {}, FHttpRequestCompleteDelegate::CreateLambda(
 		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -36,6 +42,7 @@ void UGameJoltScoreManager::FetchScoreTables(FOnFetchScoreTablesComplete OnCompl
 					}
 				}
 			}
+			Weakthis->bFetchingScoresTablesInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ScoreTables);
 		}));
 }
@@ -47,6 +54,12 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 		OnComplete.ExecuteIfBound(false, {});
 		return;
 	}
+	if (bFetchingScoresInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, {});
+		return;
+	}
+	bFetchingScoresInFlight = true;
 
 	TMap<FString, FString> Params;
 	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
@@ -77,6 +90,7 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 					}
 				}
 			}
+			Weakthis->bFetchingScoresInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, Scores);
 		}));
 }
@@ -88,6 +102,13 @@ void UGameJoltScoreManager::AddScoreForGuest(FOnAddScoreComplete OnComplete, con
 		OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
 		return;
 	}
+
+	if (bAddScoreForGuestInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("Another AddScoreForGuest request is already in flight."));
+		return;
+	}
+	bAddScoreForGuestInFlight = true;
 
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("guest"), GuestName);
@@ -102,6 +123,7 @@ void UGameJoltScoreManager::AddScoreForGuest(FOnAddScoreComplete OnComplete, con
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bAddScoreForGuestInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }
@@ -113,6 +135,12 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 		OnComplete.ExecuteIfBound(false, -1);
 		return;
 	}
+	if (bGetScoreRankInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, -1);
+		return;
+	}
+	bGetScoreRankInFlight = true;
 
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("sort"), FString::FromInt(SortValue));
@@ -135,6 +163,7 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 					bSuccess = JsonObject->TryGetNumberField(TEXT("rank"), Rank);
 				}
 			}
+			Weakthis->bGetScoreRankInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, Rank);
 		}));
 }
@@ -146,6 +175,12 @@ void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 So
 		OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
 		return;
 	}
+	if (bAddScoreInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("Another AddScore request is already in flight."));
+		return;
+	}
+	bAddScoreInFlight = true;
 
 	FString User, Token;
 	SubsystemPtr->GetActiveUser(User, Token);
@@ -169,6 +204,7 @@ void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 So
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bAddScoreInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }

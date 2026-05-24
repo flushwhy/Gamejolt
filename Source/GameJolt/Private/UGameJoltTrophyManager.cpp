@@ -16,6 +16,12 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchTrophiesInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Fetch already in progress. Please wait."));
+        return;
+	}
+	bFetchTrophiesInFlight = true;
 
     FString User, Token;
     SubsystemPtr->GetActiveUser(User, Token);
@@ -64,6 +70,7 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
                 }
             }
 
+			Weakthis->bFetchTrophiesInFlight = false;
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
         }));
 }

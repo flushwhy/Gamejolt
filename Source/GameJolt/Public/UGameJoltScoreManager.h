@@ -31,5 +31,15 @@ public:
 	void AddScore(FOnDataStoreOpComplete OnComplete, int32 SortValue, FString ScoreText, int32 TableID = 0);
 
 private:
+	/*
+	* To prevent overlapping requests which is a BluePrint issue.
+	*/
+	bool bFetchingScoresTablesInFlight = false;
+	bool bFetchingScoresInFlight = false;
+	bool bAddScoreForGuestInFlight = false;
+	bool bGetScoreRankInFlight = false;
+	bool bAddScoreInFlight = false;
+
+
 	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
 };

@@ -21,5 +21,10 @@ public:
 	void AuthenticateUser(FOnAuthUserComplete OnComplete, const FString& Username, const FString& UserToken);
 
 private:
+	/*
+	* To prevent overlapping requests which is a BluePrint issue.
+	*/
+	bool bAuthenticateUserInFlight = false;
+
 	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
 };

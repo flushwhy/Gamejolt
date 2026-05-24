@@ -123,6 +123,13 @@ void UGameJoltBlueprintLibrary::FetchTrophies(const UObject* WorldContextObject,
 
 void UGameJoltBlueprintLibrary::FetchScores(const UObject* WorldContextObject, int32 TableID, int32 Limit, bool bCurrentUserOnly, FOnFetchScoresComplete OnComplete)
 {
+	if (bFetchScoresInProgress)
+	{
+		OnComplete.ExecuteIfBound(false, {});
+		return;
+	}
+	bFetchScoresInProgress = true;
+
 	UGameJoltSubsystem* GJ = GetSubsystem(WorldContextObject);
 	if (!GJ)
 	{

@@ -16,6 +16,14 @@ void UGameJoltDataStoreManager::SetData(FOnDataStoreOpComplete OnComplete, const
         return;
     }
 
+    if (bSetDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+    }
+    bSetDataInFlight = true;
+
+
     TMap<FString, FString> Params;
     Params.Add(TEXT("key"), Key);
     Params.Add(TEXT("data"), Data);
@@ -27,6 +35,7 @@ void UGameJoltDataStoreManager::SetData(FOnDataStoreOpComplete OnComplete, const
 
             FString ErrorMessage;
             const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+            Weakthis->bSetDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -38,6 +47,13 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
         OnComplete.ExecuteIfBound(false, TEXT(""), TEXT("Invalid Subsystem."));
         return;
     }
+
+    if (bFetchDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+	}
+	bFetchDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("key"), Key);
@@ -57,6 +73,7 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
                 }
                 ErrorMessage = TEXT("Failed to extract data from response.");
             }
+			Weakthis->bFetchDataInFlight = false;
             OnComplete.ExecuteIfBound(false, TEXT(""), ErrorMessage);
         }));
 }
@@ -68,6 +85,12 @@ void UGameJoltDataStoreManager::RemoveData(FOnDataStoreOpComplete OnComplete, co
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bRemoveDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+	}
+	bRemoveDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("key"), Key);
@@ -78,6 +101,7 @@ void UGameJoltDataStoreManager::RemoveData(FOnDataStoreOpComplete OnComplete, co
             if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
             const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bRemoveDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -89,6 +113,12 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchKeysInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+    }
+	bFetchKeysInFlight = true;
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/get-keys"), {}, FHttpRequestCompleteDelegate::CreateLambda(
         [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -117,6 +147,7 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
                     }
                 }
             }
+			Weakthis->bFetchKeysInFlight = false;
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
         }));
 }
@@ -128,6 +159,12 @@ void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, c
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bSetUserDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+	}
+	bSetUserDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -141,6 +178,7 @@ void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, c
             if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
             const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bSetUserDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -152,6 +190,12 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
         OnComplete.ExecuteIfBound(false, TEXT(""), TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchUserDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+    }
+	bFetchUserDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -173,6 +217,7 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
                 }
                 ErrorMessage = TEXT("Failed to extract data from response.");
             }
+			Weakthis->bFetchUserDataInFlight = false;
             OnComplete.ExecuteIfBound(false, TEXT(""), ErrorMessage);
         }));
 }
@@ -184,6 +229,12 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bRemoveUserDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+	}
+	bRemoveUserDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -196,6 +247,7 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
             if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
             const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bRemoveUserDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -207,6 +259,12 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchUserKeysInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+	}
+	bFetchUserKeysInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -239,6 +297,7 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
                     }
                 }
             }
+			Weakthis->bFetchUserKeysInFlight = false;
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
         }));
 }

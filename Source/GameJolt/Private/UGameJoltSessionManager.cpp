@@ -16,6 +16,13 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
 		return;
 	}
+	if (bOpenSessionInFlight)
+	{
+
+		OnComplete.ExecuteIfBound(false, TEXT("OpenSession already in progress."));
+		return;
+	}
+	bOpenSessionInFlight = true;
 
 	FString User, Token;
 	SubsystemPtr->GetActiveUser(User, Token);
@@ -26,8 +33,6 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		return;
 	}
 
-	// FIX: Was assigning undeclared 'Username'/'UserToken' variables instead of the
-	// local 'User'/'Token' retrieved above.
 	CurrentUsername = User;
 	CurrentUserToken = Token;
 
@@ -53,7 +58,8 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 					});
 				Weakthis->GetWorld()->GetTimerManager().SetTimer(Weakthis->PingTimerHandle, TimerDelegate, 30.0f, true);
 			}
-
+						
+			Weakthis->bOpenSessionInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }
@@ -100,6 +106,13 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 		return;
 	}
 
+	if (bCloseSessionInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("CloseSession already in progress."));
+		return;
+	}
+	bCloseSessionInFlight = true;
+
 	// Stop automatic pings immediately
 	GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
 
@@ -113,6 +126,8 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+		
+			Weakthis->bCloseSessionInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 

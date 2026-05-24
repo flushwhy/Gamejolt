@@ -24,5 +24,10 @@ public:
 	void FetchTrophies(bool bAchieved, FOnFetchTrophiesComplete OnComplete);
 
 private:
+	/*
+	* To prevent overlapping requests which is a BluePrint issue.
+	*/
+	bool bFetchTrophiesInFlight = false;
+
 	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
 };

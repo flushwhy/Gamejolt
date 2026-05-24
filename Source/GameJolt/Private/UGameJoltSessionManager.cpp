@@ -16,6 +16,13 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
 		return;
 	}
+	if (bOpenSessionInFlight)
+	{
+
+		OnComplete.ExecuteIfBound(false, TEXT("OpenSession already in progress."));
+		return;
+	}
+	bOpenSessionInFlight = true;
 
 	FString User, Token;
 	SubsystemPtr->GetActiveUser(User, Token);
@@ -26,8 +33,6 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		return;
 	}
 
-	// FIX: Was assigning undeclared 'Username'/'UserToken' variables instead of the
-	// local 'User'/'Token' retrieved above.
 	CurrentUsername = User;
 	CurrentUserToken = Token;
 
@@ -36,23 +41,25 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 	Params.Add(TEXT("user_token"), Token);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/open"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltSessionManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 
 			if (bSuccess)
 			{
 				// Start automatic 30-second pings to keep the session alive.
 				// Game Jolt closes sessions not pinged within 120 seconds.
 				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([this]()
+				TimerDelegate.BindLambda([Weakthis]()
 					{
-						PingSession();
+						Weakthis->PingSession();
 					});
-				GetWorld()->GetTimerManager().SetTimer(PingTimerHandle, TimerDelegate, 30.0f, true);
+				Weakthis->GetWorld()->GetTimerManager().SetTimer(Weakthis->PingTimerHandle, TimerDelegate, 30.0f, true);
 			}
-
+						
+			Weakthis->bOpenSessionInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }
@@ -69,8 +76,26 @@ void UGameJoltSessionManager::PingSession(bool bIsActive)
 	Params.Add(TEXT("user_token"), CurrentUserToken);
 	Params.Add(TEXT("status"), bIsActive ? TEXT("active") : TEXT("idle"));
 
-	// Fire-and-forget — no callback needed for pings.
-	SubsystemPtr->MakeApiRequest(TEXT("/sessions/ping"), Params, FHttpRequestCompleteDelegate());
+	// Fire-and-forget ï¿½ no callback needed for pings.
+	SubsystemPtr->MakeApiRequest(TEXT("/sessions/ping"), Params, FHttpRequestCompleteDelegate::CreateLambda(
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		{
+			int PingFailedCount = 0;
+			if (!bWasSuccessful)
+			{
+
+				PingFailedCount++;
+				if (PingFailedCount >= 3)
+				{
+					GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
+					UE_LOG(LogTemp, Warning, TEXT("GameJolt session ping failed 3 times. Stopping further pings."));
+				}
+			}
+			else
+			{
+				PingFailedCount = 0;
+			}
+		}));
 }
 
 void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
@@ -81,6 +106,13 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 		return;
 	}
 
+	if (bCloseSessionInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("CloseSession already in progress."));
+		return;
+	}
+	bCloseSessionInFlight = true;
+
 	// Stop automatic pings immediately
 	GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
 
@@ -89,10 +121,13 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 	Params.Add(TEXT("user_token"), CurrentUserToken);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/close"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltSessionManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+		
+			Weakthis->bCloseSessionInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 

@@ -16,15 +16,26 @@ void UGameJoltDataStoreManager::SetData(FOnDataStoreOpComplete OnComplete, const
         return;
     }
 
+    if (bSetDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+    }
+    bSetDataInFlight = true;
+
+
     TMap<FString, FString> Params;
     Params.Add(TEXT("key"), Key);
     Params.Add(TEXT("data"), Data);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/set"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
+
             FString ErrorMessage;
-            const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+            const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+            Weakthis->bSetDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -37,16 +48,24 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
         return;
     }
 
+    if (bFetchDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+	}
+	bFetchDataInFlight = true;
+
     TMap<FString, FString> Params;
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage, FetchedData;
-            if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+            if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+                const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid() && JsonObject->TryGetStringField(TEXT("data"), FetchedData))
                 {
                     OnComplete.ExecuteIfBound(true, FetchedData, TEXT(""));
@@ -54,6 +73,7 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
                 }
                 ErrorMessage = TEXT("Failed to extract data from response.");
             }
+			Weakthis->bFetchDataInFlight = false;
             OnComplete.ExecuteIfBound(false, TEXT(""), ErrorMessage);
         }));
 }
@@ -65,15 +85,23 @@ void UGameJoltDataStoreManager::RemoveData(FOnDataStoreOpComplete OnComplete, co
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bRemoveDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+	}
+	bRemoveDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/remove"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
-            const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+            const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bRemoveDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -85,15 +113,22 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchKeysInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+    }
+	bFetchKeysInFlight = true;
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/get-keys"), {}, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             TArray<FGameJoltDataKey> FetchedKeys;
             FString ErrorMessage;
-            if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+            if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+                const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid())
                 {
                     const TArray<TSharedPtr<FJsonValue>>* KeysJsonArray;
@@ -112,6 +147,7 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
                     }
                 }
             }
+			Weakthis->bFetchKeysInFlight = false;
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
         }));
 }
@@ -123,6 +159,12 @@ void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, c
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bSetUserDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+	}
+	bSetUserDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -131,10 +173,12 @@ void UGameJoltDataStoreManager::SetUserData(FOnDataStoreOpComplete OnComplete, c
     Params.Add(TEXT("data"), Data);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/set"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
-            const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+            const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bSetUserDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -146,6 +190,12 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
         OnComplete.ExecuteIfBound(false, TEXT(""), TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchUserDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+    }
+	bFetchUserDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -153,12 +203,13 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if(!Weakthis.IsValid()) return;
             FString ErrorMessage, FetchedData;
-            if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+            if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+                const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid() && JsonObject->TryGetStringField(TEXT("data"), FetchedData))
                 {
                     OnComplete.ExecuteIfBound(true, FetchedData, TEXT(""));
@@ -166,6 +217,7 @@ void UGameJoltDataStoreManager::FetchUserData(FOnDataStoreFetchComplete OnComple
                 }
                 ErrorMessage = TEXT("Failed to extract data from response.");
             }
+			Weakthis->bFetchUserDataInFlight = false;
             OnComplete.ExecuteIfBound(false, TEXT(""), ErrorMessage);
         }));
 }
@@ -177,6 +229,12 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
         OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bRemoveUserDataInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {});
+        return;
+	}
+	bRemoveUserDataInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
@@ -184,10 +242,12 @@ void UGameJoltDataStoreManager::RemoveUserData(FOnDataStoreOpComplete OnComplete
     Params.Add(TEXT("key"), Key);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/remove"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             FString ErrorMessage;
-            const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+            const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bRemoveUserDataInFlight = false;
             OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
         }));
 }
@@ -199,19 +259,26 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchUserKeysInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Request already in flight."));
+        return;
+	}
+	bFetchUserKeysInFlight = true;
 
     TMap<FString, FString> Params;
     Params.Add(TEXT("username"), Username);
     Params.Add(TEXT("user_token"), UserToken);
 
     SubsystemPtr->MakeApiRequest(TEXT("/data-store/get-keys"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltDataStoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             TArray<FGameJoltDataKey> FetchedKeys;
             FString ErrorMessage;
-            if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+            if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+                const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid())
                 {
                     const TArray<TSharedPtr<FJsonValue>>* KeysJsonArray;
@@ -230,6 +297,7 @@ void UGameJoltDataStoreManager::FetchUserKeys(FOnDataStoreKeysComplete OnComplet
                     }
                 }
             }
+			Weakthis->bFetchUserKeysInFlight = false;
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
         }));
 }

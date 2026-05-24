@@ -16,25 +16,32 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 		OnComplete.ExecuteIfBound(false, FGameJoltUser(), TEXT("Invalid Subsystem."));
 		return;
 	}
+	if (bAuthenticateUserInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, FGameJoltUser(), TEXT("Another authentication request is already in progress."));
+		return;
+	}
+	bAuthenticateUserInFlight = true;
 
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("username"), Username);
 	Params.Add(TEXT("user_token"), UserToken);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/users/auth"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, Username, UserToken, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Username, UserToken, Weakthis = TWeakObjectPtr<UGameJoltUserManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FGameJoltUser AuthenticatedUser;
 			FString ErrorMessage;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
 					{
-						SubsystemPtr->SetActiveUser(Username, UserToken);
+						Weakthis->SubsystemPtr->SetActiveUser(Username, UserToken);
 						OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
 						return;
 					}
@@ -46,6 +53,7 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 				}
 			}
 
+			Weakthis->bAuthenticateUserInFlight = false;
 			OnComplete.ExecuteIfBound(false, AuthenticatedUser, ErrorMessage);
 		}));
 }

@@ -16,6 +16,12 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
         OnComplete.ExecuteIfBound(false, {}, TEXT("Invalid Subsystem."));
         return;
     }
+    if (bFetchTrophiesInFlight)
+    {
+        OnComplete.ExecuteIfBound(false, {}, TEXT("Fetch already in progress. Please wait."));
+        return;
+	}
+	bFetchTrophiesInFlight = true;
 
     FString User, Token;
     SubsystemPtr->GetActiveUser(User, Token);
@@ -32,14 +38,15 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
     Params.Add(TEXT("achieved"), bAchieved ? TEXT("true") : TEXT("false"));
 
     SubsystemPtr->MakeApiRequest(TEXT("/trophies"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-        [OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+        [OnComplete, Weakthis = TWeakObjectPtr<UGameJoltTrophyManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
         {
+            if (!Weakthis.IsValid()) return;
             TArray<FGameJoltTrophy> FetchedTrophies;
             FString ErrorMessage;
 
-            if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+            if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
             {
-                const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+                const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid())
                 {
                     const TArray<TSharedPtr<FJsonValue>>* TrophiesJsonArray;
@@ -63,6 +70,7 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
                 }
             }
 
+			Weakthis->bFetchTrophiesInFlight = false;
             OnComplete.ExecuteIfBound(false, {}, ErrorMessage);
         }));
 }

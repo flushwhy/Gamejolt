@@ -15,17 +15,24 @@ void UGameJoltScoreManager::FetchScoreTables(FOnFetchScoreTablesComplete OnCompl
 		OnComplete.ExecuteIfBound(false, {});
 		return;
 	}
+	if (bFetchingScoresTablesInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, {});
+		return;
+	}
+	bFetchingScoresTablesInFlight = true;
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/tables"), {}, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			TArray<FGameJoltScoreTable> ScoreTables;
 			FString ErrorMessage;
 			bool bSuccess = false;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					const TArray<TSharedPtr<FJsonValue>>* TablesJsonArray;
@@ -35,6 +42,7 @@ void UGameJoltScoreManager::FetchScoreTables(FOnFetchScoreTablesComplete OnCompl
 					}
 				}
 			}
+			Weakthis->bFetchingScoresTablesInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ScoreTables);
 		}));
 }
@@ -46,6 +54,12 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 		OnComplete.ExecuteIfBound(false, {});
 		return;
 	}
+	if (bFetchingScoresInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, {});
+		return;
+	}
+	bFetchingScoresInFlight = true;
 
 	TMap<FString, FString> Params;
 	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
@@ -57,15 +71,16 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 	}
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			TArray<FGameJoltScore> Scores;
 			FString ErrorMessage;
 			bool bSuccess = false;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
 					const TArray<TSharedPtr<FJsonValue>>* ScoresJsonArray;
@@ -75,6 +90,7 @@ void UGameJoltScoreManager::FetchScores(FOnFetchScoresComplete OnComplete, int32
 					}
 				}
 			}
+			Weakthis->bFetchingScoresInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, Scores);
 		}));
 }
@@ -87,6 +103,13 @@ void UGameJoltScoreManager::AddScoreForGuest(FOnAddScoreComplete OnComplete, con
 		return;
 	}
 
+	if (bAddScoreForGuestInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("Another AddScoreForGuest request is already in flight."));
+		return;
+	}
+	bAddScoreForGuestInFlight = true;
+
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("guest"), GuestName);
 	Params.Add(TEXT("score"), ScoreString);
@@ -95,10 +118,12 @@ void UGameJoltScoreManager::AddScoreForGuest(FOnAddScoreComplete OnComplete, con
 	if (!ExtraData.IsEmpty()) Params.Add(TEXT("extra_data"), ExtraData);
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/add"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bAddScoreForGuestInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }
@@ -110,27 +135,35 @@ void UGameJoltScoreManager::GetScoreRank(FOnGetRankComplete OnComplete, int32 So
 		OnComplete.ExecuteIfBound(false, -1);
 		return;
 	}
+	if (bGetScoreRankInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, -1);
+		return;
+	}
+	bGetScoreRankInFlight = true;
 
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("sort"), FString::FromInt(SortValue));
 	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/get-rank"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			int32 Rank = -1;
 			bool bSuccess = false;
 			FString ErrorMessage;
 
-			if (SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			if (Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
 			{
-				const TSharedPtr<FJsonObject> JsonObject = SubsystemPtr->ParseResponse(Response);
+				const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
 				if (JsonObject.IsValid())
 				{
-					// FIX: delegate params were inverted — bSuccess first, Rank second.
+					// FIX: delegate params were inverted ï¿½ bSuccess first, Rank second.
 					bSuccess = JsonObject->TryGetNumberField(TEXT("rank"), Rank);
 				}
 			}
+			Weakthis->bGetScoreRankInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, Rank);
 		}));
 }
@@ -142,6 +175,12 @@ void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 So
 		OnComplete.ExecuteIfBound(false, TEXT("Invalid Subsystem."));
 		return;
 	}
+	if (bAddScoreInFlight)
+	{
+		OnComplete.ExecuteIfBound(false, TEXT("Another AddScore request is already in flight."));
+		return;
+	}
+	bAddScoreInFlight = true;
 
 	FString User, Token;
 	SubsystemPtr->GetActiveUser(User, Token);
@@ -160,10 +199,12 @@ void UGameJoltScoreManager::AddScore(FOnDataStoreOpComplete OnComplete, int32 So
 	if (TableID != 0) Params.Add(TEXT("table_id"), FString::FromInt(TableID));
 
 	SubsystemPtr->MakeApiRequest(TEXT("/scores/add"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[OnComplete, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltScoreManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
+			if (!Weakthis.IsValid()) return;
 			FString ErrorMessage;
-			const bool bSuccess = SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
+			Weakthis->bAddScoreInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
 }

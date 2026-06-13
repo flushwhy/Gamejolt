@@ -24,21 +24,37 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
-	TObjectPtr<UGameJoltTrophyManager> TrophyManager;
+#if ENGINE_MAJOR_VERSION >= 5
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    TObjectPtr<UGameJoltTrophyManager> TrophyManager;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
-	TObjectPtr<UGameJoltScoreManager> ScoreManager;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    TObjectPtr<UGameJoltScoreManager> ScoreManager;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
-	TObjectPtr<UGameJoltDataStoreManager> DataStoreManager;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    TObjectPtr<UGameJoltDataStoreManager> DataStoreManager;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
-	TObjectPtr<UGameJoltUserManager> UserManager;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    TObjectPtr<UGameJoltUserManager> UserManager;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
-	TObjectPtr<UGameJoltSessionManager> SessionManager;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    TObjectPtr<UGameJoltSessionManager> SessionManager;
+#else
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    UGameJoltTrophyManager* TrophyManager;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    UGameJoltScoreManager* ScoreManager;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    UGameJoltDataStoreManager* DataStoreManager;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    UGameJoltUserManager* UserManager;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Jolt|Managers")
+    UGameJoltSessionManager* SessionManager;
+#endif
 	/**
 	 * Sets the active user for API requests. Called automatically after a successful AuthenticateUser.
 	 */
@@ -63,7 +79,7 @@ public:
 
 	/**
 	 * Makes a GET request to the Game Jolt API.
-	 * All Game Jolt API v1.2 requests are GET — the bIsPostRequest parameter has been removed.
+	 * All Game Jolt API v1.2 requests are GET ï¿½ the bIsPostRequest parameter has been removed.
 	 */
 	void MakeApiRequest(const FString& Endpoint, const TMap<FString, FString>& Parameters, const FHttpRequestCompleteDelegate& OnComplete);
 

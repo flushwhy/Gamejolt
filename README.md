@@ -14,6 +14,14 @@ This plugin simplifies integrating Game Jolt features into your Unreal Engine pr
 
 ---
 
+## Requirements
+>⚠️ This plugin requires a C++ or C++/Blueprint project.
+Pure Blueprint-only projects cannot load C++ plugins.
+If your project is Blueprint-only, convert it first:
+Tools → New C++ Class → choose any class → compile.
+This is a one-time step and does not affect your existing Blueprints.
+
+---
 ## Installation
 
 1. Go to the **Releases** page of this repository and download the latest `.zip` file.

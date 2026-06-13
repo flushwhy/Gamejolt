@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - TBA
+
+### Add 
+- **Suport for UE4.2x**: I added support for Unreal Verison 4.2x versions.
+
+### Fixed
+
+- **Lambda Weak Pointer Safety**: Added `TWeakObjectPtr` captures to all HTTP response 
+  lambdas across every manager. Previously, if a level transition occurred while a request 
+  was in-flight, the lambda could attempt to invoke a garbage-collected delegate or manager 
+  instance. The existing `if (!SubsystemPtr.IsValid())` guard at call-time did not protect 
+  against this mid-flight case.
+
+- **Session Ping Failure Handling**: Added a consecutive failure counter to `PingSession`. 
+After 3 failed pings the timer is cleared automatically, preventing infinite
+fire-and-forget 
+requests on a dead network connection.
+
+---
+
 ## [2.0.0] - 2026-22-5
 
 This is a major release with breaking changes. Blueprint graphs from 1.x will need to be rebuilt using the new single-node API.

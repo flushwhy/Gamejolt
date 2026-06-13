@@ -323,6 +323,7 @@ public:
 
 private:
 
+
 	/** Internal helper — retrieves the subsystem from any world context object. Returns nullptr and logs on failure. */
 	static UGameJoltSubsystem* GetSubsystem(const UObject* WorldContextObject);
 };

@@ -39,5 +39,19 @@ public:
 	void FetchUserKeys(FOnDataStoreKeysComplete OnComplete, const FString& Username, const FString& UserToken);
 
 private:
+
+	/*
+	* To prevent overlapping requests which is a BluePrint issue.
+	*/
+
+	bool bSetDataInFlight		 = false;
+	bool bFetchDataInFlight		 = false;
+	bool bRemoveDataInFlight	 = false;
+	bool bFetchKeysInFlight		 = false;
+	bool bSetUserDataInFlight	 = false;
+	bool bFetchUserDataInFlight	 = false;
+	bool bRemoveUserDataInFlight = false;
+	bool bFetchUserKeysInFlight	 = false;
+
 	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
 };

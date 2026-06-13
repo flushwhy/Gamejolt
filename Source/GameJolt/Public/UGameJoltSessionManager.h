@@ -35,6 +35,14 @@ public:
 	void PingSession(bool bIsActive = true);
 
 private:
+
+	/*
+	* To prevent overlapping requests which is a BluePrint issue.
+	*/
+	bool bOpenSessionInFlight = false;
+	bool bCloseSessionInFlight = false;
+	//bool bPingSessionInFlight = false; // Not because they are Fire and forget right now.
+
 	TWeakObjectPtr<UGameJoltSubsystem> SubsystemPtr;
 
 	FString CurrentUsername;

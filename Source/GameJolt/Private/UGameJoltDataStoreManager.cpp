@@ -68,6 +68,8 @@ void UGameJoltDataStoreManager::FetchData(FOnDataStoreFetchComplete OnComplete, 
                 const TSharedPtr<FJsonObject> JsonObject = Weakthis->SubsystemPtr->ParseResponse(Response);
                 if (JsonObject.IsValid() && JsonObject->TryGetStringField(TEXT("data"), FetchedData))
                 {
+                    Weakthis->bFetchDataInFlight = false;
+                    Weakthis->bFetchUserDataInFlight = false;
                     OnComplete.ExecuteIfBound(true, FetchedData, TEXT(""));
                     return;
                 }
@@ -136,6 +138,8 @@ void UGameJoltDataStoreManager::FetchKeys(FOnDataStoreKeysComplete OnComplete)
                     {
                         if (FJsonObjectConverter::JsonArrayToUStruct(*KeysJsonArray, &FetchedKeys, 0, 0))
                         {
+                            Weakthis->bFetchKeysInFlight = false;
+                            Weakthis->bFetchUserKeysInFlight = false;
                             OnComplete.ExecuteIfBound(true, FetchedKeys, TEXT(""));
                             return;
                         }

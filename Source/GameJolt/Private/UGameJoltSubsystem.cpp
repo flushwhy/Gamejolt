@@ -99,7 +99,7 @@ void UGameJoltSubsystem::MakeApiRequest(const FString& Endpoint, const TMap<FStr
 
 	const FString FinalUrl = BaseUrl + Endpoint + TEXT("?") + EncodedParamString + TEXT("&signature=") + Signature;
 
-	UE_LOG(LogTemp, Log, TEXT("GameJolt Request URL: %s"), *FinalUrl);
+	UE_LOG(LogTemp, Verbose, TEXT("GameJolt API request: %s"), *Endpoint);
 
 	// Create and fire the GET request
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = FHttpModule::Get().CreateRequest();

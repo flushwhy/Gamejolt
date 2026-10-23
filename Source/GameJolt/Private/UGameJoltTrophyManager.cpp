@@ -28,6 +28,7 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
 
     if (User.IsEmpty())
     {
+        bFetchTrophiesInFlight = false;
         OnComplete.ExecuteIfBound(false, {}, TEXT("No authenticated user. Call AuthenticateUser first."));
         return;
     }
@@ -54,6 +55,7 @@ void UGameJoltTrophyManager::FetchTrophies(bool bAchieved, FOnFetchTrophiesCompl
                     {
                         if (FJsonObjectConverter::JsonArrayToUStruct(*TrophiesJsonArray, &FetchedTrophies, 0, 0))
                         {
+                            Weakthis->bFetchTrophiesInFlight = false;
                             OnComplete.ExecuteIfBound(true, FetchedTrophies, TEXT(""));
                             return;
                         }

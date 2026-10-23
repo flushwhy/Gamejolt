@@ -22,8 +22,6 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		OnComplete.ExecuteIfBound(false, TEXT("OpenSession already in progress."));
 		return;
 	}
-	bOpenSessionInFlight = true;
-
 	FString User, Token;
 	SubsystemPtr->GetActiveUser(User, Token);
 
@@ -33,6 +31,7 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 		return;
 	}
 
+	bOpenSessionInFlight = true;
 	CurrentUsername = User;
 	CurrentUserToken = Token;
 
@@ -43,7 +42,7 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/open"), Params, FHttpRequestCompleteDelegate::CreateLambda(
 		[OnComplete, Weakthis = TWeakObjectPtr<UGameJoltSessionManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
-			if (!Weakthis.IsValid()) return;
+			if (!Weakthis.IsValid() || !Weakthis->SubsystemPtr.IsValid()) return;
 			FString ErrorMessage;
 			const bool bSuccess = Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage);
 
@@ -51,14 +50,18 @@ void UGameJoltSessionManager::OpenSession(FOnSessionComplete OnComplete)
 			{
 				// Start automatic 30-second pings to keep the session alive.
 				// Game Jolt closes sessions not pinged within 120 seconds.
-				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([Weakthis]()
+				if (UWorld* World = Weakthis->GetWorld())
+				{
+					FTimerDelegate TimerDelegate;
+					TimerDelegate.BindLambda([Weakthis]()
 					{
-						Weakthis->PingSession();
+						if (Weakthis.IsValid()) Weakthis->PingSession();
 					});
-				Weakthis->GetWorld()->GetTimerManager().SetTimer(Weakthis->PingTimerHandle, TimerDelegate, 30.0f, true);
+					World->GetTimerManager().SetTimer(Weakthis->PingTimerHandle, TimerDelegate, 30.0f, true);
+				}
+				Weakthis->ConsecutivePingFailures = 0;
 			}
-						
+
 			Weakthis->bOpenSessionInFlight = false;
 			OnComplete.ExecuteIfBound(bSuccess, ErrorMessage);
 		}));
@@ -76,24 +79,28 @@ void UGameJoltSessionManager::PingSession(bool bIsActive)
 	Params.Add(TEXT("user_token"), CurrentUserToken);
 	Params.Add(TEXT("status"), bIsActive ? TEXT("active") : TEXT("idle"));
 
-	// Fire-and-forget � no callback needed for pings.
+	// Fire-and-forget ping; count consecutive transport or API failures.
 	SubsystemPtr->MakeApiRequest(TEXT("/sessions/ping"), Params, FHttpRequestCompleteDelegate::CreateLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+		[Weakthis = TWeakObjectPtr<UGameJoltSessionManager>(this)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
-			int PingFailedCount = 0;
-			if (!bWasSuccessful)
-			{
+			if (!Weakthis.IsValid() || !Weakthis->SubsystemPtr.IsValid()) return;
 
-				PingFailedCount++;
-				if (PingFailedCount >= 3)
+			FString ErrorMessage;
+			if (!Weakthis->SubsystemPtr->IsResponseSuccessful(Response, bWasSuccessful, ErrorMessage))
+			{
+				++Weakthis->ConsecutivePingFailures;
+				if (Weakthis->ConsecutivePingFailures >= 3)
 				{
-					GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
-					UE_LOG(LogTemp, Warning, TEXT("GameJolt session ping failed 3 times. Stopping further pings."));
+					if (UWorld* World = Weakthis->GetWorld())
+					{
+						World->GetTimerManager().ClearTimer(Weakthis->PingTimerHandle);
+					}
+					UE_LOG(LogTemp, Warning, TEXT("GameJolt session ping failed 3 consecutive times. Stopping further pings."));
 				}
 			}
 			else
 			{
-				PingFailedCount = 0;
+				Weakthis->ConsecutivePingFailures = 0;
 			}
 		}));
 }
@@ -115,6 +122,7 @@ void UGameJoltSessionManager::CloseSession(FOnSessionComplete OnComplete)
 
 	// Stop automatic pings immediately
 	GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
+	ConsecutivePingFailures = 0;
 
 	TMap<FString, FString> Params;
 	Params.Add(TEXT("username"), CurrentUsername);

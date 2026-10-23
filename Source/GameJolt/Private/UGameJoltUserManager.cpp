@@ -42,6 +42,7 @@ void UGameJoltUserManager::AuthenticateUser(FOnAuthUserComplete OnComplete, cons
 					if (FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &AuthenticatedUser, 0, 0))
 					{
 						Weakthis->SubsystemPtr->SetActiveUser(Username, UserToken);
+						Weakthis->bAuthenticateUserInFlight = false;
 						OnComplete.ExecuteIfBound(true, AuthenticatedUser, TEXT(""));
 						return;
 					}

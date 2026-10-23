@@ -21,11 +21,7 @@ Integrate the Game Jolt API into Unreal Engine projects with Blueprint nodes and
 - **Project type:** C++ or C++/Blueprint. Pure Blueprint-only projects cannot load this C++ plugin.
 - **Engine target:** Unreal Engine 4.20–4.27 and Unreal Engine 5.0–5.8. This is the intended compatibility range; not every minor version has been independently verified. Check the release notes and test the exact engine version used by your project.
 
-> ⚠️ This plugin requires a C++ or C++/Blueprint project.
-Pure Blueprint-only projects cannot load C++ plugins.
-If your project is Blueprint-only, convert it first:
-Tools → New C++ Class → choose any class → compile.
-This is a one-time step and does not affect your existing Blueprints.
+If your project is currently Blueprint-only, convert it by adding a C++ class in the editor and completing the initial compile.
 
 ---
 ## Installation

@@ -47,6 +47,7 @@ private:
 
 	FString CurrentUsername;
 	FString CurrentUserToken;
+	int32 ConsecutivePingFailures = 0;
 
 	FTimerHandle PingTimerHandle;
 };

@@ -1,6 +1,8 @@
 # GameJolt Plugin for Unreal Engine
 
-This plugin simplifies integrating Game Jolt features into your Unreal Engine projects, with full support for both C++ and Blueprints.
+Integrate the Game Jolt API into Unreal Engine projects with Blueprint nodes and C++ functions for authentication, sessions, trophies, leaderboards, and cloud data.
+
+**[Documentation site](https://flushwhy.github.io/Gamejolt/)** · [Releases](https://github.com/flushwhy/Gamejolt/releases) · [Report a bug](https://github.com/flushwhy/Gamejolt/issues) · [Fab publishing checklist](docs/FAB_PUBLISHING.md)
 
 ---
 
@@ -15,11 +17,11 @@ This plugin simplifies integrating Game Jolt features into your Unreal Engine pr
 ---
 
 ## Requirements
->⚠️ This plugin requires a C++ or C++/Blueprint project.
-Pure Blueprint-only projects cannot load C++ plugins.
-If your project is Blueprint-only, convert it first:
-Tools → New C++ Class → choose any class → compile.
-This is a one-time step and does not affect your existing Blueprints.
+
+- **Project type:** C++ or C++/Blueprint. Pure Blueprint-only projects cannot load this C++ plugin.
+- **Engine target:** Unreal Engine 4.20–4.27 and Unreal Engine 5.0–5.8. This is the intended compatibility range; not every minor version has been independently verified. Check the release notes and test the exact engine version used by your project.
+
+If your project is currently Blueprint-only, convert it by adding a C++ class in the editor and completing the initial compile.
 
 ---
 ## Installation
@@ -132,6 +134,12 @@ UGameJoltBlueprintLibrary::SetUserData(this, TEXT("high_score"), TEXT("5000"), O
 > All C++ functions require a valid `WorldContextObject` as the first argument. Passing `this` from any `AActor` or `UUserWidget` subclass works.
 
 ---
+
+## Support and compatibility
+
+- Read the [documentation site](https://flushwhy.github.io/Gamejolt/) for installation, setup, Blueprint, and C++ guidance.
+- Check [CHANGELOG.md](CHANGELOG.md) before upgrading, especially when migrating from 1.x to 2.x.
+- Report issues at [GitHub Issues](https://github.com/flushwhy/Gamejolt/issues). Include the plugin version, Unreal Engine version, steps to reproduce, and the first relevant error. Remove user tokens and private credentials from logs.
 
 ## Notes
 
